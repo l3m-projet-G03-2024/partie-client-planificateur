@@ -1,0 +1,8 @@
+<div    leaflet 
+        [leafletOptions]="{zoomControl: false, attributionControl: false}" 
+        [leafletCenter]="center()"
+        [leafletZoom]="zoom()" 
+        [leafletLayers]="layers()" 
+        (leafletMapReady)="registerLeafletMap($event, divMap)" 
+        #divMap
+        ></div>

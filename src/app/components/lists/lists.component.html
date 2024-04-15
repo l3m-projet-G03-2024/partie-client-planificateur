@@ -1,0 +1,18 @@
+<section class="listes">
+    @for (sig of sigLists(); track sig) {
+        <mat-list role="list" 
+          cdkDropList 
+          #L = "cdkDropList"
+          [cdkDropListConnectedTo] = "sigDropListRefs()"
+          (cdkDropListDropped)="dropIntoList(sig, $event)"
+          >
+          @for (e of sig(); track e) {
+            <mat-list-item cdkDrag [cdkDragData]="{sig: sig, value: e}">{{e}}</mat-list-item>
+          }
+        </mat-list>
+      }
+</section>
+
+@for (sig of sigLists(); track sig) {
+    <code>{{sig() | json}}</code>
+}
