@@ -102,6 +102,23 @@
             ],
             "scripts": []
           }
+        },
+        "deploy": {
+          "builder": "@angular/fire:deploy",
+          "options": {
+            "version": 2
+          },
+          "configurations": {
+            "production": {
+              "buildTarget": "client-planificateur:build:production",
+              "serveTarget": "client-planificateur:serve:production"
+            },
+            "development": {
+              "buildTarget": "client-planificateur:build:development",
+              "serveTarget": "client-planificateur:serve:development"
+            }
+          },
+          "defaultConfiguration": "production"
         }
       }
     }
