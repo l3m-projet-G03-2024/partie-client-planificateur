@@ -1,0 +1,14 @@
+{
+  "targets": {
+    "proj-int-2024-g03": {
+      "hosting": {
+        "client-planificateur": [
+          "proj-int-2024-g03"
+        ]
+      }
+    }
+  },
+  "projects": {
+    "default": "proj-int-2024-g03"
+  }
+}
