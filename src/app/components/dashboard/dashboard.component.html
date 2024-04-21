@@ -1,0 +1,58 @@
+<div class="min-h-screen bg-gray-100">
+    <aside class="bg-white shadow-sm translate-x-0 fixed inset-0 z-50 my-4 ml-4 h-[calc(100vh-32px)] w-72 rounded-xl transition-transform duration-300 xl:translate-x-0 border border-blue-gray-100">
+      <div class="relative">
+        <a class="py-6 px-8 text-center" href="#/">
+          <span class="block antialiased tracking-normal font-sans text-2xl font-bold leading-relaxed text-blue-gray-900">
+            Planificateur
+          </span>
+        </a>
+      </div>
+      <div class="m-4">
+        <ul class="mb-4 flex flex-col gap-1">
+          @for (item of sideBarLinks; track $index) {
+            <li>
+              <a [routerLink]="item.path" class="align-middle select-none font-sans font-bold text-center transition-all text-xs py-3 rounded-lg text-blue-gray-500 hover:bg-gray-100 w-full flex items-center gap-4 px-4">
+                            <img src="{{item.img}}" class="w-7 h-7" />
+                            <p class="block antialiased font-sans text-lg leading-relaxed text-slate-500 font-medium capitalize">{{item.link}}</p>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+    </aside>
+  
+    <div class="p-4 xl:ml-80">
+      <nav class="block w-full max-w-full bg-transparent text-white shadow-none rounded-xl transition-all px-0 py-1 mb-4">
+        <div class="flex flex-row justify-between gap-6">
+          <div class="capitalize">
+            <ol class="flex flex-wrap items-center w-full bg-opacity-60 rounded-md bg-transparent p-0 transition-all">
+              <li class="flex items-center text-gray-900 antialiased font-sans text-sm font-normal leading-normal cursor-pointer transition-colors duration-300 hover:text-blue-500">
+                <a routerLink="/dashboard">
+                   <p class="block antialiased font-sans text-sm leading-normal text-gray-500 font-normal opacity-50 transition-all hover:text-blue-500 hover:opacity-100">dashboard</p>
+                </a>
+                <span class="text-blue-gray-500 text-sm antialiased font-sans font-normal leading-normal mx-2 pointer-events-none select-none">/</span>
+             </li>
+              @for (item of breadCrumbsPath(); track $index) {
+                <li class="flex items-center text-gray-900 antialiased font-sans text-sm font-normal leading-normal cursor-pointer transition-colors hover:text-blue-500">
+                  <p class="block antialiased font-sans text-sm leading-normal text-gray-900 font-normal">{{item.title}}</p>
+               </li>
+              }
+            </ol>
+            
+          </div>
+          <div class="flex items-center">
+            <div>
+              <div  class="flex flex-row align-middle select-none font-sans font-bold text-center text-sm py-3 rounded-lg hover:bg-gray-500/10 text-gray-500 w-full flex items-center gap-x-2 px-4 capitalize cursor-pointer">
+                <div><img src="../assets/se-deconnecter.png" alt="deconnexion" class="w-5"/></div>
+                <div (click)="signOut()">Deconnexion</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div class="h-full w-full">
+        <router-outlet></router-outlet>
+      </div>
+    </div>
+  </div>
+  

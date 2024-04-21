@@ -1,0 +1,19 @@
+<h2 mat-dialog-title>Créer une journée</h2>
+<mat-dialog-content>
+  <p>Choisissez la date</p>
+  <mat-form-field>
+    <mat-label>MM/DD/YYYY</mat-label>
+    <input matInput 
+            [matDatepicker]="dp3" 
+            [(ngModel)]="data.date" 
+            [min]="minDate" 
+            disabled
+            [matDatepickerFilter]="withoutSaturdayAndSundayFilter">
+    <mat-datepicker-toggle matIconSuffix [for]="dp3"></mat-datepicker-toggle>
+    <mat-datepicker #dp3 disabled="false"></mat-datepicker>
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-button (click)="onNoClick()">Annuler</button>
+  <button mat-button [mat-dialog-close]="data.date" cdkFocusInitial>Ok</button>
+</mat-dialog-actions>

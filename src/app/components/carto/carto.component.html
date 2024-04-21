@@ -3,6 +3,7 @@
         [leafletCenter]="center()"
         [leafletZoom]="zoom()" 
         [leafletLayers]="layers()" 
-        (leafletMapReady)="registerLeafletMap($event, divMap)" 
+        (leafletMapReady)="registerLeafletMap($event, divMap)"
+        class="w-auto h-96" 
         #divMap
         ></div>

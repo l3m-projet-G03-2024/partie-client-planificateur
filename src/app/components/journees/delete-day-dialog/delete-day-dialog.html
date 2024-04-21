@@ -1,0 +1,10 @@
+<h2 mat-dialog-title>Confirmer la suppression</h2>
+<mat-dialog-content>
+  <p>
+    Journée {{data.reference}}
+  </p>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-button (click)="onNoClick()">Annuler</button>
+  <button mat-button [mat-dialog-close]="'ok'" cdkFocusInitial>Ok</button>
+</mat-dialog-actions>
