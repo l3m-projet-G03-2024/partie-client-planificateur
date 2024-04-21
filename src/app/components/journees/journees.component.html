@@ -1,0 +1,61 @@
+<div class="mt-12 mb-8 flex flex-col gap-12">
+    <div class="relative flex flex-col bg-clip-border rounded-xl bg-white text-gray-700 shadow-md">
+       <div class="relative flex flex-row justify-between items-center bg-clip-border mx-4 rounded-xl overflow-hidden bg-gradient-to-tr from-gray-900 to-gray-800 text-white shadow-gray-900/20 shadow-lg -mt-6 mb-8 p-6">
+          <h6 class="block antialiased tracking-normal font-sans text-base font-semibold leading-relaxed text-white">Journées</h6>
+          <button class="rounded-xl bg-slate-100 font-sans text-base font-semibold leading-relaxed text-slate-500 px-3 py-2"
+                    (click)="openAddDayDialog()">
+            Ajouter
+          </button>
+       </div>
+       <div class="p-6 overflow-x-scroll px-0 pt-0 pb-2">
+          <table class="w-full min-w-[640px] table-auto">
+             <thead>
+                <tr class="ligne">
+                   <th class="border-b border-blue-gray-50 py-3 px-5 text-left">
+                      <p class="block antialiased font-sans text-[12px] font-bold uppercase text-gray-500">reference</p>
+                   </th>
+                   <th class="border-b border-blue-gray-50 py-3 px-5 text-left">
+                      <p class="block antialiased font-sans text-[12px] font-bold uppercase text-gray-500">état</p>
+                   </th>
+                   <th class="border-b border-blue-gray-50 py-3 px-5 text-left">
+                      <p class="block antialiased font-sans text-[12px] font-bold uppercase text-gray-500">date</p>
+                   </th>
+                   <th class="border-b border-blue-gray-50 py-3 px-5 text-left">
+                      <p class="block antialiased font-sans text-[12px] font-bold uppercase text-gray-500"></p>
+                   </th>
+                </tr>
+             </thead>
+             <tbody>
+                @for (journee of sigJournees(); track $index) {
+                    <tr class="group/line hover:bg-slate-100">
+                        <td class="py-3 px-5 border-b border-blue-gray-50">
+                           <p class="block antialiased font-sans text-sm font-bold text-blue-gray-600">{{journee.reference}}</p>
+                        </td>
+                        <td class="py-3 px-5 border-b border-blue-gray-50">
+                           <div class="relative grid items-center font-sans uppercase whitespace-nowrap select-none text-white rounded-lg py-0.5 px-2 text-[11px] font-medium w-fit" 
+                                style="opacity: 1;"
+                                [style.background-color]="defineColorByStatus(journee.etat)">
+                                <span>{{journee.etat}}</span>
+                           </div>
+                        </td>
+                        <td class="py-3 px-5 border-b border-blue-gray-50">
+                           <p class="block antialiased font-sans text-sm font-semibold text-blue-gray-600">{{journee.date}}</p>
+                        </td>
+                        <td class="py-3 px-5 border-b border-blue-gray-50">
+                            <div class="flex flex-row w-full justify-center invisible group-hover/line:visible ">
+                                <a routerLink="details/{{journee.reference}}" class="antialiased font-sans text-sm font-semibold text-gray-600">
+                                    <img src="../../../assets/oeil.png" class="h-7 mx-2" />
+                                </a>
+                                <a (click)="openDeleteDayDialog(journee.reference)" class="cursor-pointer">
+                                    <img src="../../../assets/poubelle.png" class="h-7 mx-4"/>
+                                </a>
+                            </div>
+                        </td>
+                     </tr>
+                       
+                }
+             </tbody>
+          </table>
+       </div>
+    </div>
+ </div>

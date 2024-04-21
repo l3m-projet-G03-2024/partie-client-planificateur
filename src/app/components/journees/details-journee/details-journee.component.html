@@ -1,0 +1,79 @@
+<div class="mt-12 mb-8 flex flex-col">
+    <div class="w-full bg-clip-border rounded-xl bg-white text-gray-700 shadow-md py-4 px-4">
+        <div class="flex flex-row items-end w-full justify-between pb-2 mb-2 border-b border-slate-300">
+            <div>
+                <div class="flex flex-col">
+                    <div class="mb-2">
+                        <span class="text-xl font-extrabold mr-2">Journée:</span>
+                        <span class="text-base font-semibold">{{sigJournee().reference}}</span>
+                    </div>
+                    <div class="mb-2">
+                        <span class="items-center font-sans uppercase whitespace-nowrap select-none text-white rounded-lg py-0.5 px-2 text-xs font-medium w-fit" 
+                                    style="opacity: 1;"
+                                    [style.background-color]="defineColorByStatus(sigJournee().etat)">
+                                    <span>{{sigJournee().etat}}</span>
+                        </span>
+                    </div>
+                    <div class="mb-2 flex flex-row">
+                        <div class="mx-2">
+                            <span class="text-base font-semibold mr-2">Date:</span>
+                            <span class="text-sm font-medium">{{sigJournee().date}}</span>
+                        </div>
+                        <div class="mx-2">
+                            <span class="text-base font-semibold mr-2">Distance Totale:</span>
+                            <span class="text-sm font-medium">{{sigJournee().distanceAParcourir || 'Non défini'}}</span>
+                        </div>
+                    </div>
+                    <div class="mb-2 flex flex-row">
+                        <div class="mx-2">
+                            <span class="text-base font-semibold mr-2">Montant Total:</span>
+                            <span class="text-sm font-medium">{{sigJournee().montant || 0}} &euro;</span>
+                        </div>
+                        <div class="mx-2">
+                            <span class="text-base font-semibold mr-2">Temps de montage théorique:</span>
+                            <span class="text-sm font-medium">{{sigJournee().tempsDeMontage || 0 }} minutes</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                @if(sigJournee().etat != 'non planifiée') {
+                    <button class="mx-2 rounded-md hover:bg-slate-100 font-sans text-base font-semibold leading-relaxed px-2 py-2" 
+                            matTooltip="Vue sur carte"
+                            (click)="changeView('map-view')">
+                        <img src="../../../../assets/carte.png" class="w-8" />
+                    </button>
+                    <button class="mx-2 rounded-md hover:bg-slate-100 font-sans text-base font-semibold leading-relaxed px-2 py-2"
+                            matTooltip="Vue en listes"
+                            (click)="changeView('list-view')">
+                        <img src="../../../../assets/liste-a-puces.png" class="w-8" />
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="min-h-80">
+            @if(sigJournee().etat == 'non planifiée') {
+                <div class="w-full h-80 flex flex-col justify-center items-center">
+                    
+                    <span class="block text-gray-300 uppercase text-2xl mb-2">
+                        Pas de tournées disponibles
+                    </span>
+                    <button class="block rounded-xl bg-blue-700 font-sans text-xl font-semibold leading-relaxed text-white px-3 py-2">
+                        Planifier
+                    </button>
+                    
+                </div>
+            } @else if(detailsView() == 'list-view') {
+                <!-- TODO list component -->
+                <app-lists></app-lists>
+            } @else {
+                <!-- TODO map component -->
+                <div class="w-full">
+                    <app-carto></app-carto>
+                </div>
+            }
+        </div>
+        
+    </div>
+</div>

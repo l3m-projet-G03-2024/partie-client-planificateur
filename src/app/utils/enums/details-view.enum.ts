@@ -1,0 +1,1 @@
+export enum DetailsView { MAPVIEW = 'map-view', LISTVIEW = 'list-view' };
