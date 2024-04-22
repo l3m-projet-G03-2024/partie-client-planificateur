@@ -1,0 +1,62 @@
+<label class="text-2xl font-extrabold" mat-dialog-title>Planification de la journée {{data.reference}}</label>
+<mat-dialog-content class="h-[500px] w-[700px]">
+  <mat-stepper [linear]="true" #stepper>
+    <mat-step label="Commandes à livrer" [completed]="canGoTo()">
+        <div class="flex flex-col h-72 max overflow-y-auto">
+          <div>
+            <p class="text-lg font-base">Choisir les commandes à livrer</p>
+          </div>
+          @for(item of data.commandes; track $index) {
+            <mat-checkbox class="mr-4 my-2"
+                        color="primary"
+                        (change)="onCheck(item.reference, $event.checked)">
+                <div class="flex w-72 rounded-md py-4 px-4 shadow-md shadow-gray-300 hover:bg-slate-100">
+                  Commande N° {{item.reference}}
+                </div>
+            </mat-checkbox>
+          }
+        </div>
+        <div class="float-right mr-8">
+          <button mat-button matStepperNext [disabled]="!canGoTo()">Suivant</button>
+        </div>
+    </mat-step>
+    <mat-step label="Nombre de tournées">
+      <div class="flex flex-col mb-8">
+        <div>
+          <label>Nombre de tournées</label>
+        </div>
+        <div>
+          @if(nbTurns() == null) {
+            <label class="block text-red-600 text-sm">ne peut être null</label>
+          }
+          <input id="nbr-tournees" class="w-60 text-blue-gray-700 font-sans font-normal outline outline-0 
+                        focus:outline-0 border focus:border-1 text-sm px-3 py-3 rounded-md border-blue-gray-200 focus:border-gray-900" 
+                        type="number"
+                        min="0"
+                        placeholder="Nombre de tournées"
+                        [ngModel]="nbTurns()"
+                        (ngModelChange)="updateNbTurns($event)"/>
+        </div>
+        <div class="flex flex-row mt-8">
+          <img src="../../../../../assets/important.png" class="w-12 mr-4"/>
+          <label class="font-bold block">Le nombre de tournées doit être inférieur ou égal au nombre de commande à livrer</label>
+        </div>
+      </div>
+      
+      <div>
+        <button mat-button matStepperPrevious>Retour</button>
+      </div>
+    </mat-step>
+  </mat-stepper>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-button (click)="onNoClick()">Annuler</button>
+  <button
+          [mat-dialog-close]="submitData()"
+          [matTooltip]="disabledSubmitMsg()"
+          matTooltipPosition = "right"
+          [disabled]="!canSubmit()"
+          class="bg-gray-800 text-white font-medium rounded-md p-2 disabled:bg-gray-100 disabled:text-gray-300 disabled:font-medium">
+        Valider
+  </button>
+</mat-dialog-actions>
