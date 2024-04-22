@@ -8,6 +8,12 @@ import { EtatDeJournee } from '../../../utils/enums/etat-de-journee.enum';
 import { DetailsView } from '../../../utils/enums/details-view.enum';
 import { ListsComponent } from '../../lists/lists.component';
 import { CartoComponent } from '../../carto/carto.component';
+import { MatDialog } from '@angular/material/dialog';
+import { PlanDayDialog } from './plan-day-dialog/plan-day-dialog';
+import { commandes } from '../../../utils/data/commande.data';
+import { JourneeService } from '../../../services/journee.service';
+import { PlanDayReturnFormsData } from '../../../utils/types/plan-day-return-forms-data.type';
+import { HttpClientModule } from '@angular/common/http';
 
 @Component({
   selector: 'app-details-journee',
@@ -15,7 +21,11 @@ import { CartoComponent } from '../../carto/carto.component';
   imports: [
     MatTooltipModule,
     ListsComponent,
-    CartoComponent
+    CartoComponent,
+    HttpClientModule
+  ],
+  providers: [
+    JourneeService
   ],
   templateUrl: './details-journee.component.html',
   styleUrl: './details-journee.component.scss'
@@ -35,7 +45,9 @@ export class DetailsJourneeComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    public dialog: MatDialog,
+    private readonly journeeService: JourneeService
   ) {}
 
   ngOnInit(): void {
@@ -53,6 +65,21 @@ export class DetailsJourneeComponent implements OnInit {
 
   changeView(view: string): void {
     this.detailsView.set(view);
+  }
+
+  openPlanDayDialog(reference: string): void {
+    const dialogRef = this.dialog.open(PlanDayDialog, {
+      enterAnimationDuration: '200ms',
+      exitAnimationDuration: '200ms',
+      data: {
+        reference,
+        commandes: [...commandes]
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result: PlanDayReturnFormsData) => {
+      this.journeeService.planDay(result);
+    });
   }
 
 }
