@@ -3,10 +3,10 @@ import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { firstValueFrom, map } from 'rxjs';
 import { Journee } from '../utils/types/journee.type';
-import { CreateJournee } from '../utils/types/create-journee.type';
 import { Commande } from '../utils/types/commande.type';
-import { PlanDayReturnFormsData } from '../utils/types/plan-day-return-forms-data.type';
+import { PlanDayFormsData } from '../utils/types/plan-day-return-forms-data.type';
 import { Client } from '../utils/types/client.type';
+import { OptimizeDayResponse } from '../utils/types/optimize-day-response.type';
 
 export type ClientGroupBy = Partial<Client> & {
   commandes: Commande[]
@@ -17,8 +17,8 @@ export type ClientGroupBy = Partial<Client> & {
 })
 export class JourneeService {
 
-  private readonly DOMAIN_NAME = environment.server_url;
-  private readonly BASE_PATH = `${this.DOMAIN_NAME}/api/v1/journees`;
+  private readonly MAIN_SERVER_BASE_PATH = `${environment.mainServer}/api/v1`;
+  private readonly PLANNER_WS_BASE_PATH = `${environment.plannerWsServer}`;
 
   constructor(private httpClient: HttpClient) { }
 
@@ -27,26 +27,42 @@ export class JourneeService {
     const reference = `j${("000" + noDay).slice(-3)}G`;
     
     return firstValueFrom(
-      this.httpClient.post(
-        `${this.BASE_PATH}`,
+      this.httpClient.post<Journee>(
+        `${this.MAIN_SERVER_BASE_PATH}/journees`,
         {
           reference,
           date: date.toISOString()
+        },
+        {
+          headers: { Accept: 'application/json' }
         }
       )
-    ) as Promise<Journee>;
+    );
   }
 
   listDays(): Promise<Journee[]> {
-    return firstValueFrom(this.httpClient.get(
-        `${this.BASE_PATH}`
+    return firstValueFrom(this.httpClient.get<Journee[]>(
+        `${this.MAIN_SERVER_BASE_PATH}/journees`
       )
-    ) as Promise<Journee[]>; 
+    ); 
   }
 
   deleteDay(reference: string): void {
     firstValueFrom(this.httpClient.delete(
-      `${this.BASE_PATH}/${reference}`
+      `${this.MAIN_SERVER_BASE_PATH}/journees/${reference}`,
+      {
+        headers: { Accept: 'application/json' }
+      }
+    ));
+  }
+
+  
+  getDayDetails(reference: string): Promise<Journee> {
+    return firstValueFrom(this.httpClient.get<Journee>(
+      `${this.MAIN_SERVER_BASE_PATH}/journees/${reference}`,
+      {
+        headers: { Accept: 'application/json' }
+      }
     ));
   }
 
@@ -60,11 +76,23 @@ export class JourneeService {
     return Math.round(+noDay.toFixed(0)); 
   }
 
-  planDay(data: PlanDayReturnFormsData) {
-    console.log(data);
+  planDay(planDayData: PlanDayFormsData, distancesMatrix: number[][]): Promise<OptimizeDayResponse> {
+    const data = {
+      k: planDayData.nbTurns,
+      matrix: distancesMatrix,
+      start: 0
+    }
+
+    return firstValueFrom(this.httpClient.post<OptimizeDayResponse>(
+      `${this.PLANNER_WS_BASE_PATH}/planner/planif`,
+      {...data},
+      {
+        headers: { Accept: 'application/json' }
+      }
+    ));
   }
 
-  groupByClientGeoLocation(commandes: Commande[]): ClientGroupBy[] {
+  groupCommandsByClientGeoLocation(commandes: Commande[]): ClientGroupBy[] {
     return commandes.reduce((acc, commande) => {
       const client = acc.find(x => 
         x.lat == commande.client.lat &&

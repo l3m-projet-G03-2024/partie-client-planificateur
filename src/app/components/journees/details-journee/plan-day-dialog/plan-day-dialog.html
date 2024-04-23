@@ -4,11 +4,21 @@
     <mat-step label="Commandes à livrer" [completed]="canGoTo()">
         <div class="flex flex-col h-72 max overflow-y-auto">
           <div>
-            <p class="text-lg font-base">Choisir les commandes à livrer</p>
+            <p class="text-lg font-base">
+              Choisir les commandes à livrer ... {{commandeToDeliver().length}} / {{data.commandes.length}}
+            </p>
           </div>
+          <mat-checkbox class="mr-4 my-2"
+                        color="primary"
+                        (change)="onCheckAll($event.checked)">
+                <div class="flex w-72 rounded-md font-extrabold uppercase py-4 px-4 shadow-md shadow-gray-300 hover:bg-slate-100">
+                  Toutes les commandes
+                </div>
+          </mat-checkbox>
           @for(item of data.commandes; track $index) {
             <mat-checkbox class="mr-4 my-2"
                         color="primary"
+                        [checked]="isSelected(item.reference)"
                         (change)="onCheck(item.reference, $event.checked)">
                 <div class="flex w-72 rounded-md py-4 px-4 shadow-md shadow-gray-300 hover:bg-slate-100">
                   Commande N° {{item.reference}}

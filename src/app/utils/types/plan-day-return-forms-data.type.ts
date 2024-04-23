@@ -1,6 +1,6 @@
 import { Commande } from "./commande.type"
 
-export type PlanDayReturnFormsData = {
+export type PlanDayFormsData = {
     selectedCommandes: Commande[],
     nbTurns: number
 };

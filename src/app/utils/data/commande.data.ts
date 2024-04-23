@@ -2,28 +2,28 @@ import { EtatDeCommande } from "../enums/etat-de-commande.enum";
 import { Commande } from "../types/commande.type";
 
 export const commandes: Commande[] = [
-    {
-        reference: "c084",
-        etat: EtatDeCommande.OUVERTE,
-        client: {
-            lat: 45.165727,
-            lng: 5.735303
-        }
-    },
-    {
-        reference: "c224",
-        etat: EtatDeCommande.OUVERTE,
-        client: {
-            lat: 45.165727,
-            lng: 5.735303
-        }
-    },
+    // {
+    //     reference: "c084",
+    //     etat: EtatDeCommande.OUVERTE,
+    //     client: {
+    //         lat: 45.165727,
+    //         lng: 5.735303
+    //     }
+    // },
+    // {
+    //     reference: "c224",
+    //     etat: EtatDeCommande.OUVERTE,
+    //     client: {
+    //         lat: 45.165727,
+    //         lng: 5.735303
+    //     }
+    // },
     {
         reference: "c328",
         etat: EtatDeCommande.OUVERTE,
         client: {
             lat: 45.21678,
-            lng: 5.735303
+            lng: 5.688157
         }
     },
     {
