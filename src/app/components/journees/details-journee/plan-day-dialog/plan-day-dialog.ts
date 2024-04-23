@@ -15,7 +15,7 @@ import { Commande } from "../../../../utils/types/commande.type";
 import {MatCheckboxModule} from '@angular/material/checkbox';
 import { FormsModule } from "@angular/forms";
 import { MatTooltipModule } from "@angular/material/tooltip";
-import { PlanDayReturnFormsData } from "../../../../utils/types/plan-day-return-forms-data.type";
+import { PlanDayFormsData } from "../../../../utils/types/plan-day-return-forms-data.type";
 
 export interface PlanDayDialogData {
   reference: string,
@@ -74,6 +74,14 @@ export class PlanDayDialog {
     this.dialogRef.close();
   }
 
+  onCheckAll(isChecked: boolean): void {
+    if (isChecked) {
+      this.commandeToDeliver.set([...this.data.commandes]);
+    } else {
+      this.commandeToDeliver.set([]);
+    }
+  }
+
   onCheck(commandeReference: string, isChecked: boolean): void {
     if (isChecked) {
       const commande = this.data.commandes.find(x  => x.reference == commandeReference) as Commande;
@@ -83,11 +91,17 @@ export class PlanDayDialog {
     }
   }
 
+  isSelected(reference: string): boolean {
+    return this.commandeToDeliver().findIndex(x  => x.reference == reference) == -1
+            ? false
+            : true
+  }
+
   updateNbTurns(nb: number): void {
     this.nbTurns.set(nb);
   }
 
-  submitData(): PlanDayReturnFormsData {
+  submitData(): PlanDayFormsData {
     return {
       selectedCommandes: [...this.commandeToDeliver()],
       nbTurns: this.nbTurns()

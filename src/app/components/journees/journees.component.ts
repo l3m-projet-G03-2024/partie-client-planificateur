@@ -8,13 +8,16 @@ import { HttpClientModule } from '@angular/common/http';
 import { EtatDeJournee } from '../../utils/enums/etat-de-journee.enum';
 import { Subject } from 'rxjs';
 import { DeleteDayDialog } from './delete-day-dialog/delete-day-dialog';
+import { journees } from '../../utils/data/journees.data';
 
-export const  etatDeJourneeCouleur =  [
-    {etat: EtatDeJournee.PLANIFIEE, couleur: "#2563EB"},
-    {etat: EtatDeJournee.NONPLANIFIEE, couleur: "#D1D5DB"},
-    {etat: EtatDeJournee.ENCOURS, couleur: "#FBBF24"},
-    {etat: EtatDeJournee.EFFECTUEE, couleur: "#22C55E"},
-  ];
+export const etatDeJourneeCouleur = [
+  { etat: EtatDeJournee.PLANIFIEE, couleur: "#2563EB" },
+  { etat: EtatDeJournee.NONPLANIFIEE, couleur: "#D1D5DB" },
+  { etat: EtatDeJournee.ENCOURS, couleur: "#FBBF24" },
+  { etat: EtatDeJournee.EFFECTUEE, couleur: "#22C55E" },
+];
+
+export type EtatDeJourneeEnum = 'NONPLANIFIEE' | 'PLANIFIEE' | 'ENCOURS' | 'EFFECTUEE';
 
 @Component({
   selector: 'app-journees',
@@ -34,25 +37,13 @@ export class JourneesComponent implements OnInit {
   constructor(
     public dialog: MatDialog,
     private readonly journeeService: JourneeService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
-      // this.loadJournees().then(response => {
-      //   console.log(response);
-      // });
+    //this.loadJournees().then();
   }
 
-  readonly journees = [
-    {reference: 'J020G', etat:EtatDeJournee.NONPLANIFIEE, date: "2024-04-22"},
-    {reference: 'J019G', etat:EtatDeJournee.NONPLANIFIEE, date: "2024-04-19"},
-    {reference: 'J018G', etat:EtatDeJournee.ENCOURS, date: "2024-04-18"},
-    {reference: 'J013G', etat:EtatDeJournee.EFFECTUEE, date: "2024-04-13"},
-    {reference: 'J012G', etat:EtatDeJournee.EFFECTUEE, date: "2024-04-12"},
-    {reference: 'J011G', etat:EtatDeJournee.EFFECTUEE, date: "2024-04-11"},
-    {reference: 'J010G', etat:EtatDeJournee.EFFECTUEE, date: "2024-04-10"},
-  ];
-
-  private readonly sigJournees_ = signal([...this.journees]);
+  private readonly sigJournees_ = signal<Journee[]>([...journees]);
   readonly sigJournees = this.sigJournees_.asReadonly();
 
   private readonly detectNewJournee = new Subject<number>();
@@ -67,7 +58,7 @@ export class JourneesComponent implements OnInit {
 
   openAddDayDialog(): void {
     const dialogRef = this.dialog.open(AddDayDialog, {
-      data: {date: undefined, existedDays: this.getExistedDays()},
+      data: { date: undefined, existedDays: this.getExistedDays() },
     });
 
     dialogRef.afterClosed().subscribe(result => {
@@ -93,11 +84,11 @@ export class JourneesComponent implements OnInit {
   }
 
   getExistedDays(): Date[] {
-    const dates = this.journees.map(x => new Date(x.date));
+    const dates = this.sigJournees().map(x => new Date(x.date));
     return dates;
   }
 
-  async createDay(date: Date) {
+  async createDay(date: Date): Promise<void> {
     await this.journeeService.createDay(date);
   }
 
@@ -105,9 +96,17 @@ export class JourneesComponent implements OnInit {
     return await this.journeeService.listDays();
   }
 
-  async loadJournees() {
+  async loadJournees(): Promise<void> {
     const journees = await this.journeeService.listDays();
-    this.sigJournees_.set(journees);
+    const resp = journees.map(x => {
+      const etat = x.etat as unknown as EtatDeJourneeEnum;
+      return {
+        ...x,
+        etat: EtatDeJournee[etat],
+        date: x.date.slice(0, 10)
+      }
+    });
+    this.sigJournees_.set(resp);
   }
 
 }
