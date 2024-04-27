@@ -1,6 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
-import { AddDayDialog } from './add-day-dialog/add-day-dialog';
+import { AddDayDialog, AddDayDialogResponse } from './add-day-dialog/add-day-dialog';
 import { MatDialog } from '@angular/material/dialog';
 import { JourneeService } from '../../services/journee.service';
 import { Journee } from '../../utils/types/journee.type';
@@ -8,13 +8,14 @@ import { HttpClientModule } from '@angular/common/http';
 import { EtatDeJournee } from '../../utils/enums/etat-de-journee.enum';
 import { Subject } from 'rxjs';
 import { DeleteDayDialog } from './delete-day-dialog/delete-day-dialog';
-import { journees } from '../../utils/data/journees.data';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { EntrepotService } from '../../services/entrepot.service';
 
-export const etatDeJourneeCouleur = [
-  { etat: EtatDeJournee.PLANIFIEE, couleur: "#2563EB" },
-  { etat: EtatDeJournee.NONPLANIFIEE, couleur: "#D1D5DB" },
-  { etat: EtatDeJournee.ENCOURS, couleur: "#FBBF24" },
-  { etat: EtatDeJournee.EFFECTUEE, couleur: "#22C55E" },
+export const etatDeJourneeDetails = [
+  { etat: EtatDeJournee.PLANIFIEE, couleur: "#2563EB", label: 'planifiée' },
+  { etat: EtatDeJournee.NONPLANIFIEE, couleur: "#D1D5DB", label: 'non planifiée' },
+  { etat: EtatDeJournee.ENCOURS, couleur: "#FBBF24", label: 'en cours' },
+  { etat: EtatDeJournee.EFFECTUEE, couleur: "#22C55E", label: 'effectuée' },
 ];
 
 export type EtatDeJourneeEnum = 'NONPLANIFIEE' | 'PLANIFIEE' | 'ENCOURS' | 'EFFECTUEE';
@@ -24,10 +25,11 @@ export type EtatDeJourneeEnum = 'NONPLANIFIEE' | 'PLANIFIEE' | 'ENCOURS' | 'EFFE
   standalone: true,
   imports: [
     RouterOutlet, RouterLink, RouterLinkActive,
-    HttpClientModule
+    HttpClientModule,
+    MatTooltipModule
   ],
   providers: [
-    JourneeService
+    JourneeService, EntrepotService
   ],
   templateUrl: './journees.component.html',
   styleUrl: './journees.component.scss'
@@ -36,15 +38,17 @@ export class JourneesComponent implements OnInit {
 
   constructor(
     public dialog: MatDialog,
-    private readonly journeeService: JourneeService
+    private readonly journeeService: JourneeService,
+    private readonly entrepotService: EntrepotService
   ) { }
 
   ngOnInit(): void {
-    //this.loadJournees().then();
+    this.loadJournees().then();
   }
 
-  private readonly sigJournees_ = signal<Journee[]>([...journees]);
+  private readonly sigJournees_ = signal<Journee[]>([]);
   readonly sigJournees = this.sigJournees_.asReadonly();
+  readonly etatDeJourneeDetails = [...etatDeJourneeDetails];
 
   private readonly detectNewJournee = new Subject<number>();
 
@@ -53,18 +57,29 @@ export class JourneesComponent implements OnInit {
   });
 
   defineColorByStatus(status: EtatDeJournee): string {
-    return etatDeJourneeCouleur.find(x => x.etat == status)!.couleur;
+    return this.etatDeJourneeDetails.find(x => x.etat == status)!.couleur;
   }
 
-  openAddDayDialog(): void {
+  readonly getEtatDeJourneeLabel = (etat: EtatDeJournee): string => 
+    this.etatDeJourneeDetails.find(x => x.etat == etat)!.label;
+
+  async openAddDayDialog(): Promise<void> {
+    const entrepots = await this.entrepotService.listEntrepots();
+
     const dialogRef = this.dialog.open(AddDayDialog, {
-      data: { date: undefined, existedDays: this.getExistedDays() },
+      data: { 
+        date: undefined, 
+        existedDays: this.getExistedDays(),
+        entrepots
+      },
     });
 
-    dialogRef.afterClosed().subscribe(result => {
-      this.createDay(result).then(
-        _ => this.detectNewJournee.next(1)
-      );
+    dialogRef.afterClosed().subscribe((response: AddDayDialogResponse) => {
+      if (response.date != undefined) {
+        this.createDay(response).then(
+          _ => this.detectNewJournee.next(1)
+        );
+      }
     });
   }
 
@@ -77,8 +92,9 @@ export class JourneesComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(response => {
       if (response == 'ok') {
-        this.journeeService.deleteDay(reference);
-        this.detectNewJournee.next(1);
+        this.journeeService.deleteDay(reference).then(_ => {
+          this.detectNewJournee.next(1);
+        });
       }
     });
   }
@@ -88,8 +104,8 @@ export class JourneesComponent implements OnInit {
     return dates;
   }
 
-  async createDay(date: Date): Promise<void> {
-    await this.journeeService.createDay(date);
+  async createDay(data: AddDayDialogResponse): Promise<void> {
+    await this.journeeService.createDay(data);
   }
 
   async listDays(): Promise<Journee[]> {
@@ -99,13 +115,14 @@ export class JourneesComponent implements OnInit {
   async loadJournees(): Promise<void> {
     const journees = await this.journeeService.listDays();
     const resp = journees.map(x => {
+      
       const etat = x.etat as unknown as EtatDeJourneeEnum;
       return {
         ...x,
         etat: EtatDeJournee[etat],
-        date: x.date.slice(0, 10)
+        date: x.date
       }
-    });
+    }).sort((a, b) => (new Date(b.date)).getTime() - (new Date(a.date)).getTime());
     this.sigJournees_.set(resp);
   }
 

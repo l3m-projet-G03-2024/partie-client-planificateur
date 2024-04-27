@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -18,13 +18,13 @@ import { LocalStorageService } from '../../services/local-storage.service';
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
 
   readonly sideBarLinks = [
-    {link:"Journées", path:"/journees", img: "../assets/calendrier.png"},
-    {link:"Commandes", path:"/commandes", img: "../assets/paquet.png"},
-    {link:"Livraisons", path:"/livraisons", img: "../assets/livraison-rapide.png"},
-    {link:"Tournées", path:"/tournees",img: "../assets/destination.png"},
+    {link:"Journées", path:"/dashboard/journees", img: "../assets/calendrier.png"},
+    {link:"Commandes", path:"/dashboard/commandes", img: "../assets/paquet.png"},
+    {link:"Livraisons", path:"/dashboard/livraisons", img: "../assets/livraison-rapide.png"},
+    {link:"Tournées", path:"/dashboard/tournees",img: "../assets/destination.png"},
   ];
 
   private readonly initialBreadCrumbsPath = [
@@ -36,6 +36,14 @@ export class DashboardComponent {
     private readonly localStorageService: LocalStorageService,
     private readonly router: Router
   ) {}
+
+  ngOnInit(): void {
+    const localStorageAccessToken = this.localStorageService.getItem("accessToken");
+    
+    if (!localStorageAccessToken) {
+      this.router.navigate(['/','sign-in']);
+    } 
+  }
 
   signOut() {
     this.localStorageService.clear();

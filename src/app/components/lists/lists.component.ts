@@ -1,64 +1,88 @@
-import { CdkDropList, CdkDrag, CdkDragDrop } from '@angular/cdk/drag-drop';
+import { CdkDropList, CdkDrag, CdkDropListGroup, CdkDragDrop, moveItemInArray, transferArrayItem, } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, Component, QueryList, ViewChildren, WritableSignal, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, signal } from '@angular/core';
 import { MatListModule } from '@angular/material/list';
-
-interface ListDD_Data<T> {
-  readonly sig: WritableSignal<readonly T[]>;
-  readonly value: T;
-}
+import { Tournee } from '../../utils/types/tournee.type';
+import { Livraison } from '../../utils/types/livraison.type';
+import { TourneeService } from '../../services/tournee.service';
+import { toObservable, toSignal } from "@angular/core/rxjs-interop";
+import { Commande } from '../../utils/types/commande.type';
 
 @Component({
   selector: 'app-lists',
   standalone: true,
   imports: [
     CommonModule, MatListModule,
-    CdkDropList, CdkDrag,
+    CdkDropList, CdkDrag, CdkDropListGroup
+  ],
+  providers: [
+    TourneeService
   ],
   templateUrl: './lists.component.html',
   styleUrl: './lists.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ListsComponent implements AfterViewInit {
-  readonly sigL1 = signal<readonly string[]>(["A", "B", "C", "D"])
-  readonly sigL2 = signal<readonly string[]>(["X", "Y", "Z"])
-  readonly sigL3 = signal<readonly string[]>(["1", "2", "3", "4", "5"])
+export class ListsComponent {
+  readonly sigTournees = signal<Tournee[]>([]);
+  private readonly sigReferenceJournee = signal("");
 
-  readonly sigLists = computed(() => [this.sigL1, this.sigL2, this.sigL3]);
+  private readonly referenceTournee$ = toObservable(this.sigReferenceJournee);
 
-  @ViewChildren("L") matLists!: QueryList<CdkDropList>;
-  private readonly _sigDropListRefs = signal<CdkDropList<any>[]>([])
-  readonly sigDropListRefs = this._sigDropListRefs.asReadonly();
+  private loadTournees_ = this.referenceTournee$.subscribe(value => {
+    this.loadTournees(value).then();
+  });
 
-
-  ngAfterViewInit(): void {
-    const update = () => {
-      const L = this.matLists.toArray();
-      this._sigDropListRefs.set(L)
-    };
-    
-    this.matLists.changes.subscribe(update);
-    update();
+  @Input({required: true})
+  get referenceJournee() { return this.sigReferenceJournee()}
+  set referenceJournee(referenceJournee: string) {
+    this.sigReferenceJournee.set(referenceJournee);
   }
 
-  dropIntoList(sigTarget: WritableSignal<readonly string[]>, dropEvent: CdkDragDrop<unknown, unknown, ListDD_Data<string>>) {
-    
-    // Remove from source
-    const { sig: sigSource, value } = dropEvent.item.data;
+  constructor(private readonly tourneeService: TourneeService) {}
 
-    if (sigSource === sigTarget && dropEvent.currentIndex === dropEvent.previousIndex) {
-      return
+  drop(event: CdkDragDrop<Livraison[]>) {
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    } else {
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex,
+      );
     }
-
-    sigSource.update(L => L.filter(e => e !== value))
-    
-    // Append to target, at the right index
-    sigTarget.update(L => {
-      const nL = [...L]
-      nL.splice(dropEvent.currentIndex, 0, value)
-      return nL;
-    })
-
-    console.log( sigTarget() )
   }
+
+  async loadTournees(referenceJournee: string) {
+    let tournees = await this.tourneeService.listTournees({ 
+      reference: referenceJournee
+    });
+
+    tournees = tournees.map(tournee => {
+      const livraisons =  tournee.livraisons.map(livraison => ({
+        ...livraison,
+        commandes: this.sortCommandes(livraison.commandes!)
+      }));
+      return {
+        ...tournee,
+        livraisons: this.sortLivraisons(livraisons)
+      }
+    })
+    this.sigTournees.set(tournees);
+  }
+
+  sortLivraisons(livraisons: Livraison[]) {
+    return livraisons.sort((a, b) => a.ordre - b.ordre);
+  }
+
+  sortCommandes(commandes: Commande[]) {
+    return commandes.sort((a, b) => 
+      new Date(a.dateDeCreation).getTime() - new Date(b.dateDeCreation).getTime()
+    );
+  }
+
+  toKilometer(distanceInMeter: number | undefined): string | undefined {
+    return distanceInMeter ? (distanceInMeter / 1000).toFixed(2) : undefined
+  }
+
 }

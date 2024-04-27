@@ -12,8 +12,16 @@
     <mat-datepicker-toggle matIconSuffix [for]="dp3"></mat-datepicker-toggle>
     <mat-datepicker #dp3 disabled="false"></mat-datepicker>
   </mat-form-field>
+    <mat-form-field>
+      <mat-label>Choisir l'entrepôt</mat-label>
+      <mat-select (valueChange)="selectedEntrepot.set($event)">
+        @for (entrepot of data.entrepots; track $index) {
+          <mat-option [value]="entrepot">{{entrepot.nom}}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
 </mat-dialog-content>
 <mat-dialog-actions>
   <button mat-button (click)="onNoClick()">Annuler</button>
-  <button mat-button [mat-dialog-close]="data.date" cdkFocusInitial>Ok</button>
+  <button mat-button [mat-dialog-close]="sendData()" cdkFocusInitial>Ok</button>
 </mat-dialog-actions>

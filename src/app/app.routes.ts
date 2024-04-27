@@ -22,5 +22,5 @@ export const routes: Routes = [
             { path: 'tournees', title: "Tournées", component: TourneesComponent},
         ]
     },
-    {path: '**', redirectTo: '/dashboard'}
+    {path: '**', redirectTo: '/sign-in'}
 ];

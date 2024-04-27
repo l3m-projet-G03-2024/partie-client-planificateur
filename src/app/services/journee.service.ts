@@ -4,13 +4,18 @@ import { environment } from '../../environments/environment';
 import { firstValueFrom, map } from 'rxjs';
 import { Journee } from '../utils/types/journee.type';
 import { Commande } from '../utils/types/commande.type';
-import { PlanDayFormsData } from '../utils/types/plan-day-return-forms-data.type';
-import { Client } from '../utils/types/client.type';
 import { OptimizeDayResponse } from '../utils/types/optimize-day-response.type';
-
-export type ClientGroupBy = Partial<Client> & {
-  commandes: Commande[]
-};
+import { ClientGroupBy } from '../utils/types/client-deliveries-group-by.type';
+import { PlanDayData } from '../utils/types/plan-day-data.type';
+import { EtatDeLivraison } from '../utils/enums/etat-de-livraison.enum';
+import { alphabet } from '../utils/data/alphabet.data';
+import { EtatDeTournee } from '../utils/enums/etat-de-tournee.enum';
+import { EtatDeCommande } from '../utils/enums/etat-de-commande.enum';
+import { FormatTurn } from '../utils/types/format-turn.type';
+import { Entrepot } from '../utils/types/entrepot-type';
+import { EtatDeJournee } from '../utils/enums/etat-de-journee.enum';
+import { Livraison } from '../utils/types/livraison.type';
+import { AddDayDialogResponse } from '../components/journees/add-day-dialog/add-day-dialog';
 
 @Injectable({
   providedIn: 'root'
@@ -22,16 +27,19 @@ export class JourneeService {
 
   constructor(private httpClient: HttpClient) { }
 
-  createDay(date: Date): Promise<Journee> {
+  createDay(data: AddDayDialogResponse): Promise<Journee> {
+    const {date, selectedEntrepot} = data;
     const noDay = this.calculateYearDateNo(date);
-    const reference = `j${("000" + noDay).slice(-3)}G`;
+    const reference = `j${("000" + noDay).slice(-3)}${selectedEntrepot.lettre}`;
+    
     
     return firstValueFrom(
       this.httpClient.post<Journee>(
-        `${this.MAIN_SERVER_BASE_PATH}/journees`,
+        `${this.MAIN_SERVER_BASE_PATH}/journees/`,
         {
           reference,
-          date: date.toISOString()
+          date: `${date.getFullYear()}-${("00" + (date.getMonth()+1)).slice(-2)}-${("00" + date.getDate()).slice(-2)}`,
+          nomEntrepot: selectedEntrepot.nom
         },
         {
           headers: { Accept: 'application/json' }
@@ -42,13 +50,13 @@ export class JourneeService {
 
   listDays(): Promise<Journee[]> {
     return firstValueFrom(this.httpClient.get<Journee[]>(
-        `${this.MAIN_SERVER_BASE_PATH}/journees`
+        `${this.MAIN_SERVER_BASE_PATH}/journees/`
       )
     ); 
   }
 
-  deleteDay(reference: string): void {
-    firstValueFrom(this.httpClient.delete(
+  deleteDay(reference: string): Promise<Object> {
+    return firstValueFrom(this.httpClient.delete(
       `${this.MAIN_SERVER_BASE_PATH}/journees/${reference}`,
       {
         headers: { Accept: 'application/json' }
@@ -66,37 +74,99 @@ export class JourneeService {
     ));
   }
 
-  calculateYearDateNo(date: Date): number {
-    const startYearDate = new Date(`${date.getFullYear()}-01-01`);
+  async planDay(planDayData: PlanDayData, distancesMatrix: number[][]): Promise<FormatTurn[]> {
+    const optimizedDayData = await this.optmizeDay(planDayData, distancesMatrix);
 
-    const noDay = (date.getTime() - startYearDate.getTime())
-                / (24 * 3600 * 1000)
-                + 1;
+    await this.updateDay(
+      planDayData.dayReference,
+      optimizedDayData.longTournees.reduce((acc, next) => acc+next),
+    )
     
-    return Math.round(+noDay.toFixed(0)); 
+    return this.formatOptimizedDayData(planDayData, optimizedDayData);
   }
 
-  planDay(planDayData: PlanDayFormsData, distancesMatrix: number[][]): Promise<OptimizeDayResponse> {
+  updateDay(dayReference: string, distance: number): Promise<Journee> {
+    return firstValueFrom(this.httpClient.patch<Journee>(
+      `${this.MAIN_SERVER_BASE_PATH}/journees/${dayReference}`,
+      {
+        etat: EtatDeJournee.PLANIFIEE,
+        distanceAParcourir: distance.toFixed(2)
+      },
+      {
+        headers: { Accept: 'application/json' },
+      }
+    ));
+  }
+
+  listEntrepots(): Promise<Entrepot[]> {
+    return firstValueFrom(this.httpClient.get<Entrepot[]>(
+      `${this.MAIN_SERVER_BASE_PATH}/entrepots`,
+      {
+        headers: { Accept: 'application/json' },
+      }
+    ));
+  }
+
+
+  formatOptimizedDayData(planDayData: PlanDayData, optimizedDayData: OptimizeDayResponse): FormatTurn[] {
+    return optimizedDayData.tournees.map((turn, index) => {
+      const formattedTurn = this.formatTurn(index, planDayData.dayReference);
+      return {
+        ...formattedTurn,
+        distance: optimizedDayData.longTournees[index],
+        livraisons: turn.slice(1).map((delivery, index) => ({   // slice(1): pour enlever l'entrepôt de la liste des livraisons
+          ...this.formatDelivery(index+1, formattedTurn.reference),
+          commandes: planDayData.clientDeliveries[delivery-1].commandes.map(commande => ({ // [delivery-1]: pour remettre à niveau les indexes
+            ...commande,
+            etat: EtatDeCommande.PLANIFIEE,
+            client: undefined
+          }))
+        }))
+      }
+    }
+    );
+  }
+
+  formatTurn(index: number, dayReference: string) {
+    return {
+      reference: `t${dayReference.substring(1)}-${alphabet[index].toUpperCase()}`,
+      etat: EtatDeTournee.PLANIFIEE,
+    }
+  }
+
+  formatDelivery(index: number, turnReference: string): Livraison {
+    return {
+      reference: `l${turnReference.substring(1)}${index}`,
+      etat: EtatDeLivraison.PLANIFIEE,
+      ordre: index
+    }
+  }
+
+  async optmizeDay(planDayData: PlanDayData, distancesMatrix: number[][]): Promise<OptimizeDayResponse> {
     const data = {
       k: planDayData.nbTurns,
       matrix: distancesMatrix,
       start: 0
     }
 
-    return firstValueFrom(this.httpClient.post<OptimizeDayResponse>(
+    const response = await firstValueFrom(this.httpClient.post<OptimizeDayResponse>(
       `${this.PLANNER_WS_BASE_PATH}/planner/planif`,
       {...data},
       {
         headers: { Accept: 'application/json' }
       }
     ));
+
+    return {
+      tournees: response.tournees.filter(tournee => tournee.length > 1),
+      longTournees: response.longTournees.filter(long => long > 0)
+    }
   }
 
   groupCommandsByClientGeoLocation(commandes: Commande[]): ClientGroupBy[] {
     return commandes.reduce((acc, commande) => {
-      const client = acc.find(x => 
-        x.lat == commande.client.lat &&
-        x.lng == commande.client.lng
+      const client = acc.find(x =>
+        x.email === commande.client.email
       );
 
       if (client == undefined) this.addNewClient(acc, commande);
@@ -107,19 +177,30 @@ export class JourneeService {
 
   addNewClient(clients: ClientGroupBy[], commande: Commande) {
     clients.push({
-      lat: commande.client.lat,
-      lng: commande.client.lng,
+      email : commande.client.email,
+      adresse: commande.client.adresse,
+      codePostal: commande.client.codePostal,
+      ville: commande.client.ville,
       commandes: [commande]
     })
   }
 
   addCommandeToClient(clients: ClientGroupBy[], commande: Commande) {
-    const clientIndex = clients.findIndex(x => 
-      x.lat == commande.client.lat &&
-      x.lng == commande.client.lng
+    const clientIndex = clients.findIndex(x =>
+      x.email === commande.client.email
     )
     
-    clients[clientIndex].commandes.push(commande); 
+    clients[clientIndex].commandes.push(commande);
+  }
+
+  calculateYearDateNo(date: Date): number {
+    const startYearDate = new Date(`${date.getFullYear()}-01-01`);
+
+    const noDay = (date.getTime() - startYearDate.getTime())
+                / (24 * 3600 * 1000)
+                + 1;
+    
+    return Math.round(+noDay.toFixed(0)); 
   }
 
 }
