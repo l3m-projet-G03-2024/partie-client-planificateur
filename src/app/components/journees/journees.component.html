@@ -35,7 +35,7 @@
                            <div class="relative grid items-center font-sans uppercase whitespace-nowrap select-none text-white rounded-lg py-0.5 px-2 text-[11px] font-medium w-fit" 
                                 style="opacity: 1;"
                                 [style.background-color]="defineColorByStatus(journee.etat)">
-                                <span>{{journee.etat}}</span>
+                                <span>{{getEtatDeJourneeLabel(journee.etat)}}</span>
                            </div>
                         </td>
                         <td class="py-3 px-5 border-b border-blue-gray-50">
@@ -43,10 +43,14 @@
                         </td>
                         <td class="py-3 px-5 border-b border-blue-gray-50">
                             <div class="flex flex-row w-full justify-center invisible group-hover/line:visible ">
-                                <a routerLink="details/{{journee.reference}}" class="antialiased font-sans text-sm font-semibold text-gray-600">
+                                <a routerLink="details/{{journee.reference}}"
+                                    class="antialiased font-sans text-sm font-semibold text-gray-600"
+                                    matTooltip="Voir les détails">
                                     <img src="../../../assets/oeil.png" class="h-7 mx-2" />
                                 </a>
-                                <a (click)="openDeleteDayDialog(journee.reference)" class="cursor-pointer">
+                                <a (click)="openDeleteDayDialog(journee.reference)"
+                                    class="cursor-pointer"
+                                    matTooltip="Supprimer">
                                     <img src="../../../assets/poubelle.png" class="h-7 mx-4"/>
                                 </a>
                             </div>

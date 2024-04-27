@@ -5,13 +5,13 @@
         <div class="flex flex-col h-72 max overflow-y-auto">
           <div>
             <p class="text-lg font-base">
-              Choisir les commandes à livrer ... {{commandeToDeliver().length}} / {{data.commandes.length}}
+              Choisir les commandes à livrer
             </p>
           </div>
           <mat-checkbox class="mr-4 my-2"
                         color="primary"
                         (change)="onCheckAll($event.checked)">
-                <div class="flex w-72 rounded-md font-extrabold uppercase py-4 px-4 shadow-md shadow-gray-300 hover:bg-slate-100">
+                <div class="flex w-96 rounded-md font-extrabold uppercase py-4 px-4 shadow-md shadow-gray-300 hover:bg-slate-100">
                   Toutes les commandes
                 </div>
           </mat-checkbox>
@@ -20,36 +20,50 @@
                         color="primary"
                         [checked]="isSelected(item.reference)"
                         (change)="onCheck(item.reference, $event.checked)">
-                <div class="flex w-72 rounded-md py-4 px-4 shadow-md shadow-gray-300 hover:bg-slate-100">
-                  Commande N° {{item.reference}}
+                <div class="flex flex-col w-96 rounded-md py-4 px-4 shadow-md shadow-gray-300 hover:bg-slate-100 justify-between">
+                  <div class="text-sm font-semibold ">
+                    Commande N° {{item.reference}}
+                  </div>
+                  <div class="text-xs font-medium ">
+                    Lieu: {{ item.client.adresse }}
+                  </div>
+                  <div class="text-xs">
+                    <label>
+                      {{item.client.codePostal}}, {{ item.client.ville }}
+                    </label>
+                  </div>
                 </div>
             </mat-checkbox>
           }
+        </div>
+        <div>
+          {{commandeToDeliver().length}} / {{data.commandes.length}}
         </div>
         <div class="float-right mr-8">
           <button mat-button matStepperNext [disabled]="!canGoTo()">Suivant</button>
         </div>
     </mat-step>
-    <mat-step label="Nombre de tournées">
-      <div class="flex flex-col mb-8">
-        <div>
-          <label>Nombre de tournées</label>
-        </div>
-        <div>
-          @if(nbTurns() == null) {
-            <label class="block text-red-600 text-sm">ne peut être null</label>
-          }
-          <input id="nbr-tournees" class="w-60 text-blue-gray-700 font-sans font-normal outline outline-0 
-                        focus:outline-0 border focus:border-1 text-sm px-3 py-3 rounded-md border-blue-gray-200 focus:border-gray-900" 
-                        type="number"
-                        min="0"
-                        placeholder="Nombre de tournées"
-                        [ngModel]="nbTurns()"
-                        (ngModelChange)="updateNbTurns($event)"/>
-        </div>
-        <div class="flex flex-row mt-8">
-          <img src="../../../../../assets/important.png" class="w-12 mr-4"/>
-          <label class="font-bold block">Le nombre de tournées doit être inférieur ou égal au nombre de commande à livrer</label>
+    <mat-step label="Finalisation">
+      <div class="flex flex-col mb-6">
+        <div class="flex flex-col">
+          <div>
+            @if(nbTurns() == null) {
+              <label class="block text-red-600 text-sm">ne peut être null</label>
+            }
+            <mat-form-field>
+              <mat-label>Nombre de tournées</mat-label>
+              <input matInput id="nbr-tournees"  
+                            type="number"
+                            min="0"
+                            placeholder="Nombre de tournées"
+                            [ngModel]="nbTurns()"
+                            (ngModelChange)="updateNbTurns($event)"/>
+            </mat-form-field>
+          </div>
+          <div class="flex flex-row">
+            <img src="../../../../../assets/important.png" class="w-8 mr-4"/>
+            <label class="font-medium text-sm">Le nombre de tournées doit être inférieur ou égal au nombre de commande à livrer</label>
+          </div>
         </div>
       </div>
       

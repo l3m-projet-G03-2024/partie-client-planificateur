@@ -11,7 +11,7 @@
                         <span class="items-center font-sans uppercase whitespace-nowrap select-none text-white rounded-lg py-0.5 px-2 text-xs font-medium w-fit" 
                                     style="opacity: 1;"
                                     [style.background-color]="defineColorByStatus(sigJournee().etat)">
-                                    <span>{{sigJournee().etat}}</span>
+                                    <span>{{getEtatDeJourneeLabel(sigJournee().etat)}}</span>
                         </span>
                     </div>
                     <div class="mb-2 flex flex-row">
@@ -21,7 +21,9 @@
                         </div>
                         <div class="mx-2">
                             <span class="text-base font-semibold mr-2">Distance Totale:</span>
-                            <span class="text-sm font-medium">{{sigJournee().distanceAParcourir || 'Non défini'}}</span>
+                            <span class="text-sm font-medium">
+                                {{toKilometer(sigJournee().distanceAParcourir) || 0 }} Km
+                            </span>
                         </div>
                     </div>
                     <div class="mb-2 flex flex-row">
@@ -37,7 +39,7 @@
                 </div>
             </div>
             <div>
-                @if(sigJournee().etat != 'non planifiée') {
+                @if(sigJournee().etat != 'NONPLANIFIEE') {
                     <button class="mx-2 rounded-md hover:bg-slate-100 font-sans text-base font-semibold leading-relaxed px-2 py-2" 
                             matTooltip="Vue sur carte"
                             (click)="changeView('map-view')">
@@ -53,25 +55,34 @@
         </div>
 
         <div class="min-h-80">
-            @if(sigJournee().etat == 'non planifiée') {
+            @if(sigJournee().etat == 'NONPLANIFIEE') {
                 <div class="w-full h-80 flex flex-col justify-center items-center">
-                    
-                    <span class="block text-gray-300 uppercase text-2xl mb-2">
-                        Pas de tournées disponibles
-                    </span>
-                    <button class="block rounded-xl bg-gray-800 font-sans text-xl font-semibold leading-relaxed text-white px-3 py-2"
-                            (click)="openPlanDayDialog(sigJournee().reference)">
-                        Planifier
-                    </button>
-                    
+                    @if(planInProgress().value) {
+                        <div>
+                            <mat-spinner></mat-spinner>
+                        </div>
+                        <div class="text-gray-700 text-base mt-4">
+                            {{ planInProgress().label }}
+                        </div>
+                    } @else {
+                        <span class="block text-gray-300 uppercase text-2xl mb-2">
+                            Pas de tournées disponibles
+                        </span>
+                        <button class="block rounded-xl bg-gray-800 font-sans text-xl font-semibold leading-relaxed text-white px-3 py-2"
+                                (click)="openPlanDayDialog(sigJournee().reference)">
+                            Planifier
+                        </button>
+                    }
                 </div>
             } @else if(detailsView() == 'list-view') {
                 <!-- TODO list component -->
-                <app-lists></app-lists>
+                <div class="w-full overflow-x-auto">
+                    <app-lists [referenceJournee]="sigJournee().reference"></app-lists>
+                </div>
             } @else {
                 <!-- TODO map component -->
-                <div class="w-full">
-                    <app-carto></app-carto>
+                <div class="w-full min-h-96">
+                    <app-carto [referenceJournee]="sigJournee().reference" [entrepot]="sigJournee().entrepot!"></app-carto>
                 </div>
             }
         </div>

@@ -3,21 +3,23 @@ import { Injectable } from '@angular/core';
 import { Feature, FeatureCollection, Point, Polygon, Position } from 'geojson';
 import { LatLng, LatLngLiteral } from 'leaflet';
 import { firstValueFrom } from 'rxjs';
-import { ClientGroupBy } from './journee.service';
 import { environment } from '../../environments/environment';
 import { GeoDistancesMatrixResponse } from '../utils/types/geo-distance-matrix-response.type';
+import { ClientGroupBy } from '../utils/types/client-deliveries-group-by.type';
+import { GeoPoint } from '../utils/types/geo-point.type';
+import { GeoDirections } from '../utils/types/geo-directions.type';
  
 const urlCommune = 'https://geo.api.gouv.fr/communes';
 
-/*
-* Le service de la plateforme openrouteservice permet d’obtenir  
-* une matrices carrée de distance entre les différents coordonnées entrées
-* voir plus: https://openrouteservice.org/dev/#/api-docs/v2/matrix/
-*/
-const urlDistanceMatrix = 'https://api.openrouteservice.org/v2/matrix/driving-car';
-
 @Injectable()
 export class GeoapiService {
+
+  /*
+  * Le service de la plateforme openrouteservice permet d’obtenir  
+  * une matrices carrée de distance entre les différents coordonnées entrées
+  * voir plus: https://openrouteservice.org/dev/#/api-docs/v2/matrix/
+  */
+  private openRouteServiceBaseURL = "https://api.openrouteservice.org";
 
   constructor(private httpClient: HttpClient) { }
 
@@ -34,11 +36,16 @@ export class GeoapiService {
     ]);
   }
 
-  getDistancesMatrix(clients: ClientGroupBy[]): Promise<GeoDistancesMatrixResponse> {
-    const entrepotCoord = [45.14852, 5.7369725]; //31 rue Pierre Mendes France, 38320 Eybens
-    const data  = clients.map((x) => [x.lat, x.lng])
+  async getDistancesMatrix(clients: ClientGroupBy[], entrepotCoord: number[]): Promise<GeoDistancesMatrixResponse> {
+    const data: geoCoords[] = await Promise.all(
+      clients.map(async (client) => await this.getLocationCoords(
+        `${client.adresse}, ${client.codePostal} ${client.ville}`
+      ))
+    );
+    
+    
     return firstValueFrom(this.httpClient.post<GeoDistancesMatrixResponse>(
-      urlDistanceMatrix,
+      `${this.openRouteServiceBaseURL}/v2/matrix/driving-car`,
       {
         locations: [ entrepotCoord, ...data], // les coordonnées sour format [[lat, lng], ...]
         metrics: ["distance"], // retourne une matrice de distance
@@ -47,18 +54,36 @@ export class GeoapiService {
       {
         headers: { Authorization: environment.openRouteService.apiKey },
       }
-    ))
+    ));
   }
 
-  getDistanceBetween(start: LatLngLiteral, end: LatLngLiteral) {
-    const queryParams = {
-      resource: "bdtopo-pgr",
-      profile: "car",
-      optimization: "shortest",
-      start: `${start.lat},${start.lng}`,
-      end: `${end.lat},${end.lng}`,
-    }
-    
+  async getLocationCoords(location: string): Promise<geoCoords> {
+    const response = await firstValueFrom(this.httpClient.get<GeoPoint>(
+      `${this.openRouteServiceBaseURL}/geocode/search`,
+      {
+        headers: { Authorization: environment.openRouteService.apiKey },
+        params: {
+          api_key: environment.openRouteService.apiKey,
+          text: location
+        }
+      }
+    ));
+
+    return response.features[0].geometry.coordinates;
+  }
+
+  async getDirections(coordinates: [lng: number, lat: number][]): Promise<[lat: number, lng: number][]> {
+    const response = await firstValueFrom(this.httpClient.post<GeoDirections>(
+      `${this.openRouteServiceBaseURL}/v2/directions/driving-car/geojson`,
+      {
+        coordinates
+      },
+      {
+        headers: { Authorization: environment.openRouteService.apiKey },
+      }
+    ));
+
+    return response.features[0].geometry.coordinates.map(x => [x[1], x[0]]); // return [lat, lng]
     
   }
 }
@@ -78,3 +103,5 @@ export interface GeoPropertiesForCommune {
   readonly population: number;
   readonly siren: string;
 }
+
+export type geoCoords = [longitude: number, latitude: number];

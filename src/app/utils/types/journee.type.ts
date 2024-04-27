@@ -1,4 +1,5 @@
 import { EtatDeJournee } from "../enums/etat-de-journee.enum"
+import { Entrepot } from "./entrepot-type"
 
 export type Journee = {
     reference: string,
@@ -7,4 +8,5 @@ export type Journee = {
     distanceAParcourir?: number,
     montant?: number,
     tempsDeMontage?: number,
+    entrepot?: Entrepot,
 }

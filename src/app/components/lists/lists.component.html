@@ -1,18 +1,40 @@
-<section class="listes">
-    @for (sig of sigLists(); track sig) {
-        <mat-list role="list" 
-          cdkDropList 
-          #L = "cdkDropList"
-          [cdkDropListConnectedTo] = "sigDropListRefs()"
-          (cdkDropListDropped)="dropIntoList(sig, $event)"
-          >
-          @for (e of sig(); track e) {
-            <mat-list-item cdkDrag [cdkDragData]="{sig: sig, value: e}">{{e}}</mat-list-item>
-          }
-        </mat-list>
-      }
+<section class="flex flex-row w-full pt-6">
+    @for (tournee of sigTournees(); track tournee.reference) {
+      <div class="list flex flex-col justify-start mr-8 rounded-t-lg rounded-b-md border border-slate-100">
+
+        <div class="flex flex-col w-72 bg-gray-200 rounded-t-lg px-4 pt-2">
+          <div class="font-medium">
+            Tournee: {{tournee.reference}} 
+          </div>
+          <div class="text-xs">
+            Distance: {{ toKilometer(tournee.distance) }} Km
+          </div>
+        </div>
+
+        @for (livraison of tournee.livraisons; track livraison.reference) {
+          <div class="flex flex-col item w-72 rounded-md py-2 px-4 my-2 shadow-md shadow-gray-300 hover:bg-slate-50">
+            <div>
+              <label class="font-medium">Livraison: {{livraison.reference}}</label>
+            </div>
+            <div class="text-xs font-medium">
+              <label>&nbsp;&nbsp;Lieu: {{livraison.commandes![0].client.adresse}}</label>
+            </div>
+            <div class="text-xs">
+              <label>
+                &nbsp;&nbsp;{{livraison.commandes![0].client.codePostal}}, {{ livraison.commandes![0].client.ville }}
+              </label>
+            </div>
+            <div class="flex flex-row mt-2">
+              @for (commande of livraison.commandes; track $index) {
+                <div class="px-1 py-1 mx-2 rounded-xl bg-orange-100 text-sm">
+                  {{ commande.reference }}
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+      </div>
+    }
 </section>
 
-@for (sig of sigLists(); track sig) {
-    <code>{{sig() | json}}</code>
-}

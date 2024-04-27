@@ -15,11 +15,14 @@ import { Commande } from "../../../../utils/types/commande.type";
 import {MatCheckboxModule} from '@angular/material/checkbox';
 import { FormsModule } from "@angular/forms";
 import { MatTooltipModule } from "@angular/material/tooltip";
-import { PlanDayFormsData } from "../../../../utils/types/plan-day-return-forms-data.type";
+import { PlanDayFormsData } from "../../../../utils/types/plan-day-forms-data.type";
+import { Entrepot } from "../../../../utils/types/entrepot-type";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import {MatSelectModule} from '@angular/material/select';
 
 export interface PlanDayDialogData {
   reference: string,
-  commandes: Commande[]
+  commandes: Commande[],
 }
 
 
@@ -28,28 +31,23 @@ export interface PlanDayDialogData {
   templateUrl: 'plan-day-dialog.html',
   standalone: true,
   imports: [
-    MatInputModule,
-    MatButtonModule,
-    MatDialogTitle,
-    MatDialogContent,
-    MatDialogActions,
-    MatDialogClose,
-    MatStepperModule,
-    MatCheckboxModule,
-    FormsModule,
-    MatTooltipModule
+    MatInputModule, MatButtonModule, MatDialogTitle,
+    MatDialogContent, MatDialogActions, MatDialogClose,
+    MatStepperModule, MatCheckboxModule, FormsModule,
+    MatTooltipModule, MatFormFieldModule, MatSelectModule
   ],
   providers: [
     provideNativeDateAdapter()
   ]
 })
 export class PlanDayDialog {
-  
   readonly commandeToDeliver = signal<Commande[]>([]);
   readonly canGoTo = computed(() => (
     this.commandeToDeliver().length > 0 ? true : false
   ));
+
   readonly nbTurns = signal<number>(0);
+
 
   readonly canSubmit = computed(() => 
     (
@@ -71,7 +69,7 @@ export class PlanDayDialog {
   ) { }
 
   onNoClick(): void {
-    this.dialogRef.close();
+    this.dialogRef.close(undefined);
   }
 
   onCheckAll(isChecked: boolean): void {
@@ -104,7 +102,7 @@ export class PlanDayDialog {
   submitData(): PlanDayFormsData {
     return {
       selectedCommandes: [...this.commandeToDeliver()],
-      nbTurns: this.nbTurns()
+      nbTurns: this.nbTurns(),
     }
   }
 }

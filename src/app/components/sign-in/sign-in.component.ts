@@ -11,21 +11,13 @@ import { Router } from '@angular/router';
   templateUrl: './sign-in.component.html',
   styleUrl: './sign-in.component.scss'
 })
-export class SignInComponent implements OnInit {
+export class SignInComponent {
 
   constructor(
     private readonly authService: AuthService,
     private readonly localStorageService: LocalStorageService,
     private readonly router: Router
   ) {}
-
-  ngOnInit(): void {
-    const localStorageAccessToken = this.localStorageService.getItem("accessToken");
-    
-    if (localStorageAccessToken) {
-      this.router.navigate(['/','dashboard']);
-    } 
-  }
 
   async signIn(email: string, password: string): Promise<void> {
     const accessToken = await this.authService.signIn(email, password);
