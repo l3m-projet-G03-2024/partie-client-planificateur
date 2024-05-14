@@ -17,6 +17,11 @@ import { EtatDeJournee } from '../utils/enums/etat-de-journee.enum';
 import { Livraison } from '../utils/types/livraison.type';
 import { AddDayDialogResponse } from '../components/journees/add-day-dialog/add-day-dialog';
 
+type UpdateDay = {
+  etat?: EtatDeJournee;
+  distanceAParcourir?: number;
+};
+
 @Injectable({
   providedIn: 'root'
 })
@@ -79,18 +84,20 @@ export class JourneeService {
 
     await this.updateDay(
       planDayData.dayReference,
-      optimizedDayData.longTournees.reduce((acc, next) => acc+next),
+      {
+        etat: EtatDeJournee.PLANIFIEE,
+        distanceAParcourir: optimizedDayData.longTournees.reduce((acc, next) => acc+next)
+      },
     )
     
     return this.formatOptimizedDayData(planDayData, optimizedDayData);
   }
 
-  updateDay(dayReference: string, distance: number): Promise<Journee> {
+  updateDay(dayReference: string, body: UpdateDay): Promise<Journee> {
     return firstValueFrom(this.httpClient.patch<Journee>(
       `${this.MAIN_SERVER_BASE_PATH}/journees/${dayReference}`,
       {
-        etat: EtatDeJournee.PLANIFIEE,
-        distanceAParcourir: distance.toFixed(2)
+        ...body
       },
       {
         headers: { Accept: 'application/json' },

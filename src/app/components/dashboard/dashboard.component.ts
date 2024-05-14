@@ -22,9 +22,6 @@ export class DashboardComponent implements OnInit {
 
   readonly sideBarLinks = [
     {link:"Journées", path:"/dashboard/journees", img: "../assets/calendrier.png"},
-    {link:"Commandes", path:"/dashboard/commandes", img: "../assets/paquet.png"},
-    {link:"Livraisons", path:"/dashboard/livraisons", img: "../assets/livraison-rapide.png"},
-    {link:"Tournées", path:"/dashboard/tournees",img: "../assets/destination.png"},
   ];
 
   private readonly initialBreadCrumbsPath = [

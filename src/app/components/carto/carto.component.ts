@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnDestroy, OnInit, Signal, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnDestroy, Signal, computed, signal } from '@angular/core';
 import { LeafletModule } from '@asymmetrik/ngx-leaflet';
 import {
   LatLng, Layer, TileLayer, tileLayer, polyline,
@@ -10,21 +10,22 @@ import {
 import { Subscription } from 'rxjs';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatListModule } from '@angular/material/list';
-import { GeoapiService, PositionToLatLng } from '../../services/geoapi.service';
+import { GeoapiService } from '../../services/geoapi.service';
 import { getObsResize } from './utils/rxjs';
 import { HttpClientModule } from '@angular/common/http';
-import { getCustomMarker, getMarker } from './utils/marker';
+import { getCustomMarker } from './utils/marker';
 import { Tournee } from '../../utils/types/tournee.type';
-import { toObservable, toSignal } from "@angular/core/rxjs-interop";
+import { toObservable } from "@angular/core/rxjs-interop";
 import { TourneeService } from '../../services/tournee.service';
-import { entrepots } from '../../utils/data/entrepot.data';
 import { Commande } from '../../utils/types/commande.type';
 import { Livraison } from '../../utils/types/livraison.type';
 import { LeafletColors } from './utils/colors';
 import { Entrepot } from '../../utils/types/entrepot-type';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 type geoAPICoordinatesFormat = [lng: number, lat:number];
 type leafetCoordinatesFormat = [lat: number, lng:number];
+type TourneeWithColor = Tournee & {color?: string};
 
 @Component({
   selector: 'app-carto',
@@ -33,7 +34,7 @@ type leafetCoordinatesFormat = [lat: number, lng:number];
   imports: [
     CommonModule, LeafletModule,
     MatGridListModule, MatListModule,
-    HttpClientModule,
+    HttpClientModule, MatCheckboxModule
   ],
   templateUrl: './carto.component.html',
   styleUrl: './carto.component.scss',
@@ -46,18 +47,31 @@ export class CartoComponent implements OnDestroy {
   private readonly leafletMap = signal<LeafletMap | undefined>(undefined);
   private readonly tournees = signal<(LeafletPolyline | LeafletMarker)[]>([]);
 
-  readonly sigTournees = signal<Tournee[]>([]);
+  readonly sigTournees = signal<TourneeWithColor[]>([]);
   private readonly sigReferenceJournee = signal("");
+  readonly sigSelectedTourneesReference = signal<string[]>([]);
+  readonly sigSelectedTournees = computed(() => {
+    return this.sigTournees().filter(tournee => this.sigSelectedTourneesReference().includes(tournee.reference));
+  });
 
   private readonly referenceTournee$ = toObservable(this.sigReferenceJournee);
 
   private loadTournees_ = this.referenceTournee$.subscribe(value => {
     this.loadTournees(value).then(()=> {
+      this.sigTournees().forEach(tournee => this.onCheck(tournee.reference, true));
       this.displayMarkers();
       this.displayPolylines().then();
     });
-    
   });
+
+  private readonly selectedTournees$ = toObservable(this.sigSelectedTournees);
+
+  private readonly displaySelectedTournees = this.selectedTournees$.subscribe(_ => {
+    this.tournees.set([]);
+    this.displayMarkers();
+    this.displayPolylines().then();
+  })
+
 
   @Input({required: true})
   get referenceJournee() { return this.sigReferenceJournee()}
@@ -85,46 +99,47 @@ export class CartoComponent implements OnDestroy {
   constructor(private geoAPI: GeoapiService, private readonly tourneeService: TourneeService) {}
 
   displayMarkers(): void {
-    const coords =  this.sigTournees().map(tournee => 
+    const coords =  this.sigSelectedTournees().map(tournee => 
       tournee.livraisons.map(livraison => {
         const {latitude: lat, longitude: lng} = livraison.commandes![0].client;
-        return new LatLng(lat!, lng!);
+        return {
+          coord: new LatLng(lat!, lng!),
+          color: tournee.color
+        };
       })
     );
 
-    const markers = coords.flatMap((x, index) => 
-      x.map(y => getCustomMarker(y, LeafletColors[index]))
+    const markers = coords.flatMap(x => 
+      x.map(y => getCustomMarker(y.coord, y.color!, ''))
     );
 
     markers.push(getCustomMarker({
       lat: this.entrepot.latitude,
       lng: this.entrepot.longitude
-    } as LatLng, 'gold'));
+    } as LatLng, 'gold', "Entrepôt"));
     
     this.tournees.update(u => [...u, ...markers]);
   }
 
   async displayPolylines(): Promise<void> {
-    const coords =  this.sigTournees().map(tournee => 
+    const coords =  this.sigSelectedTournees().map(tournee => 
       tournee.livraisons.map(livraison => {
         const {latitude: lat, longitude: lng} = livraison.commandes![0].client;
-        return [lng, lat] as geoAPICoordinatesFormat;
+        return {
+          coord: [lng, lat] as geoAPICoordinatesFormat,
+          color: tournee.color
+        };
       })
     );
-
-    const entrepotCoords = await this.geoAPI.getLocationCoords(
-      `${this.entrepot.adresse}, ${this.entrepot.code_postal} ${this.entrepot.ville}`
-    )
     
-
     const directions: leafetCoordinatesFormat[][] = await Promise.all(
       coords.map(async (x) => await this.geoAPI.getDirections([
         [this.entrepot.longitude, this.entrepot.latitude],
-        ...x
+        ...x.map(y => y.coord)
       ]))
     );
     
-    const polylines = directions.map((coords, index) => polyline(coords, {color: LeafletColors[index]}));
+    const polylines = directions.map(($coords, index) => polyline($coords, {color: coords[index][0].color}));
     this.tournees.update(u => [...u, ...polylines]);
   }
 
@@ -137,17 +152,18 @@ export class CartoComponent implements OnDestroy {
       reference: referenceJournee
     });
 
-    tournees = tournees.map(tournee => {
+    tournees = tournees.map((tournee) => {
       const livraisons =  tournee.livraisons.map(livraison => ({
         ...livraison,
         commandes: this.sortCommandes(livraison.commandes!)
       }));
       return {
         ...tournee,
+        
         livraisons: this.sortLivraisons(livraisons)
       }
-    })
-    this.sigTournees.set(tournees);
+    }).sort((a, b) => a.reference.localeCompare(b.reference));
+    this.sigTournees.set(tournees.map((tournee, index) => ({...tournee, color: LeafletColors[index]})));
   }
 
   sortLivraisons(livraisons: Livraison[]): Livraison[] {
@@ -158,5 +174,21 @@ export class CartoComponent implements OnDestroy {
     return commandes.sort((a, b) => 
       new Date(a.dateDeCreation).getTime() - new Date(b.dateDeCreation).getTime()
     );
+  }
+
+  getColor(index: number): string {
+    return LeafletColors[index];
+  }
+
+  onCheck(tourneeReference:string, value: boolean) {
+    if (value) {
+      this.sigSelectedTourneesReference.update(references => 
+        [...references, tourneeReference]
+      );
+    } else {
+      this.sigSelectedTourneesReference.update(references => 
+        references.filter(reference => reference != tourneeReference)
+      );
+    }
   }
 }

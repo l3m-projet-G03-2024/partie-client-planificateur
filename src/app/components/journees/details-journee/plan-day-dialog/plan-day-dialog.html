@@ -1,72 +1,150 @@
-<label class="text-2xl font-extrabold" mat-dialog-title>Planification de la journée {{data.reference}}</label>
+<label class="text-2xl font-extrabold" mat-dialog-title>Construction de la journée {{data.reference}}</label>
 <mat-dialog-content class="h-[500px] w-[700px]">
   <mat-stepper [linear]="true" #stepper>
-    <mat-step label="Commandes à livrer" [completed]="canGoTo()">
-        <div class="flex flex-col h-72 max overflow-y-auto">
-          <div>
-            <p class="text-lg font-base">
-              Choisir les commandes à livrer
-            </p>
+    <mat-step label="Choix des équipes" [completed]="canGoTo()">
+      <div class="w-full flex flex-col mt-6">
+        @for (team of deliveryTeams(); track $index) {
+          <div class="flex flex-col mt-2">
+            <label class="font-medium">Equipe {{$index+1}}</label>
+            <div class="flex flex-row items-baseline mt-px"
+                 [class.flex] = "!team.inEdition"
+                 [class.hidden] = "team.inEdition">
+              <mat-chip-set>
+                @for (livreur of team.livreurs; track livreur) {
+                  <mat-chip-row>
+                    {{livreur.prenom}} {{livreur.nom}}
+                  </mat-chip-row>
+                }
+                <mat-chip-row>
+                  Camion: {{team.camion?.immatriculation}}
+                </mat-chip-row>
+              </mat-chip-set>
+              <div class="ml-4">
+                <button (click)="editTeam($index, true)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button class="ml-3"
+                        (click)="deleteTeam($index)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+          
+            <div class="flex-row items-baseline mt-px"
+                 [class.flex] = "team.inEdition"
+                 [class.hidden] = "!team.inEdition">
+              <mat-form-field class="w-60">
+                <mat-label>Equipe {{$index +1}}</mat-label>
+                <mat-select (valueChange)="updateTeam($event, $index, 'LIVREURS')" multiple>
+                    @for (livreur of team.livreurs; track $index) {
+                      <mat-option [value]="livreur">
+                        {{livreur.prenom}} {{livreur.nom}}
+                      </mat-option>
+                    }
+                    @for (livreur of data.livreurs; track livreur) {
+                      <mat-option [value]="livreur"
+                                  [style.display]="isChosenLivreur(livreur.trigramme) ? 'none' : 'flex'">
+                        {{livreur.prenom}} {{livreur.nom}}
+                      </mat-option>
+                    }
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field class="w-40 ml-2">
+                <mat-label>Camion</mat-label>
+                <mat-select (valueChange)="updateTeam($event, $index, 'CAMION')">
+                    @for (camion of data.camions; track camion) {
+                      <mat-option [value]="camion"
+                                  [disabled]="isChosenCamion(camion.immatriculation)">
+                        {{camion.immatriculation}}
+                      </mat-option>
+                    }
+                </mat-select>
+              </mat-form-field>
+              <div class="ml-4">
+                <button (click)="editTeam($index, false)"
+                        [class.hidden]="!canValidateTeam($index)">
+                  <mat-icon>done_all</mat-icon>
+                </button>
+              </div>
+            </div>
           </div>
-          <mat-checkbox class="mr-4 my-2"
+        
+        }
+        <div class="mt-4">
+          <button class="flex items-center justify-center text-slate-700 font-medium rounded-md p-2 border border-bg-slate-800 disabled:bg-gray-100"
+                  (click)="addTeam()"
+                  [class.hidden]="!sigCanAddNewTeam()">
+                <mat-icon>add</mat-icon>
+                <span>Nouvelle Equipe</span>
+          </button>
+        </div>
+      </div>
+      <div class="float-right mr-8">
+        <button mat-button matStepperNext [disabled]="!canGoTo()">Suivant</button>
+      </div>
+    </mat-step>
+    <mat-step label="Choix des commandes">
+      <div class="flex flex-col h-72 max overflow-y-auto">
+        <div class="flex flex-row">
+          <div>
+            {{commandeToDeliver().length}} / {{data.commandes.length}}
+          </div>
+          <div class="ml-6">
+              <label for="sortBy">Trier par: </label>
+              <select #sortBy name="sortBy" 
+                      class="border border-bg-slate-800 rounded-lg focus:border focus:border-bg-slate-900"
+                      [value]="sigSortCommandsBy()"
+                      (change)="sigSortCommandsBy.set(sortBy.value)">
+                <option value="date">Date</option>
+                <option value="adresse">Adresse</option>
+                <option value="ville">Ville</option>
+              </select>
+          </div>
+          <div class="ml-6"
+               [hidden]="sigSortCommandsBy() != 'date'">
+            <label for="orderBy">Ordre: </label>
+            <select #orderBy name="orderBy"
+                    class="border border-bg-slate-800 rounded-lg focus:border focus:border-bg-slate-900"
+                    [value]="sigOrderCommandsBy()"
+                    (change)="sigOrderCommandsBy.set(orderBy.value)">
+              <option value="recent">Recent</option>
+              <option value="ancien">Ancien</option>
+            </select>
+        </div>
+        </div>
+        <mat-checkbox class="mr-4 my-2"
+                      color="primary"
+                      (change)="onCheckAll($event.checked)">
+              <div class="flex w-96 rounded-md font-extrabold uppercase py-4 px-4 shadow-md shadow-gray-300 hover:bg-slate-100">
+                Toutes les commandes
+              </div>
+        </mat-checkbox>
+        @for(item of sigCommandes(); track $index) {
+          <div>
+            {{item.date}} {{item.adresse}} {{item.codePostal}}
+          </div>
+          @for (commande of item.commandes; track $index) {
+            <mat-checkbox class="mr-4 my-2 ml-4"
                         color="primary"
-                        (change)="onCheckAll($event.checked)">
-                <div class="flex w-96 rounded-md font-extrabold uppercase py-4 px-4 shadow-md shadow-gray-300 hover:bg-slate-100">
-                  Toutes les commandes
-                </div>
-          </mat-checkbox>
-          @for(item of data.commandes; track $index) {
-            <mat-checkbox class="mr-4 my-2"
-                        color="primary"
-                        [checked]="isSelected(item.reference)"
-                        (change)="onCheck(item.reference, $event.checked)">
+                        [checked]="isSelected(commande.reference)"
+                        (change)="onCheck(commande.reference, $event.checked)">
                 <div class="flex flex-col w-96 rounded-md py-4 px-4 shadow-md shadow-gray-300 hover:bg-slate-100 justify-between">
                   <div class="text-sm font-semibold ">
-                    Commande N° {{item.reference}}
+                    Commande N° {{commande.reference}}
                   </div>
                   <div class="text-xs font-medium ">
-                    Lieu: {{ item.client.adresse }}
+                    Lieu: {{ commande.client.adresse }}
                   </div>
                   <div class="text-xs">
                     <label>
-                      {{item.client.codePostal}}, {{ item.client.ville }}
+                      {{commande.client.codePostal}}, {{ commande.client.ville }}
                     </label>
                   </div>
                 </div>
             </mat-checkbox>
           }
-        </div>
-        <div>
-          {{commandeToDeliver().length}} / {{data.commandes.length}}
-        </div>
-        <div class="float-right mr-8">
-          <button mat-button matStepperNext [disabled]="!canGoTo()">Suivant</button>
-        </div>
-    </mat-step>
-    <mat-step label="Finalisation">
-      <div class="flex flex-col mb-6">
-        <div class="flex flex-col">
-          <div>
-            @if(nbTurns() == null) {
-              <label class="block text-red-600 text-sm">ne peut être null</label>
-            }
-            <mat-form-field>
-              <mat-label>Nombre de tournées</mat-label>
-              <input matInput id="nbr-tournees"  
-                            type="number"
-                            min="0"
-                            placeholder="Nombre de tournées"
-                            [ngModel]="nbTurns()"
-                            (ngModelChange)="updateNbTurns($event)"/>
-            </mat-form-field>
-          </div>
-          <div class="flex flex-row">
-            <img src="../../../../../assets/important.png" class="w-8 mr-4"/>
-            <label class="font-medium text-sm">Le nombre de tournées doit être inférieur ou égal au nombre de commande à livrer</label>
-          </div>
-        </div>
+        }
       </div>
-      
       <div>
         <button mat-button matStepperPrevious>Retour</button>
       </div>

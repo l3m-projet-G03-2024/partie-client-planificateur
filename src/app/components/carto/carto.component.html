@@ -1,9 +1,19 @@
-<div    leaflet 
-        [leafletOptions]="{zoomControl: false, attributionControl: false}" 
-        [leafletCenter]="center()"
-        [leafletZoom]="zoom()" 
-        [leafletLayers]="layers()" 
-        (leafletMapReady)="registerLeafletMap($event, divMap)"
-        class="w-auto h-[500px]" 
-        #divMap
-        ></div>
+<div class="flex flex-row mb-6 mt-4">
+        @for (tournee of sigTournees() ; track $index) {
+        <div class="mx-3">
+                <span
+                        class="px-2 py-2 rounded-md bg-slate-50 shadow-md shadow-gray-300 border-l-4"
+                          [style.border-left-color]="tournee.color">
+                        <mat-checkbox class="mr-4" color="primary"
+                                [checked]="sigSelectedTourneesReference().includes(tournee.reference)"
+                                (change)="onCheck(tournee.reference, $event.checked)">
+
+                                {{tournee.reference}}
+                        </mat-checkbox>
+                </span>
+        </div>
+        }
+</div>
+<div leaflet [leafletOptions]="{zoomControl: false, attributionControl: false}" [leafletCenter]="center()"
+        [leafletZoom]="zoom()" [leafletLayers]="layers()" (leafletMapReady)="registerLeafletMap($event, divMap)"
+        class="w-auto h-[500px]" #divMap></div>

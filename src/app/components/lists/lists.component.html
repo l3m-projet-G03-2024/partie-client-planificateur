@@ -1,37 +1,60 @@
-<section class="flex flex-row w-full pt-6">
+<section class="flex flex-row w-full pt-6" cdkDropListGroup>
     @for (tournee of sigTournees(); track tournee.reference) {
-      <div class="list flex flex-col justify-start mr-8 rounded-t-lg rounded-b-md border border-slate-100">
-
-        <div class="flex flex-col w-72 bg-gray-200 rounded-t-lg px-4 pt-2">
-          <div class="font-medium">
-            Tournee: {{tournee.reference}} 
-          </div>
-          <div class="text-xs">
-            Distance: {{ toKilometer(tournee.distance) }} Km
+      <div class="list flex flex-col justify-start mr-8 rounded-t-lg"
+           cdkDropList
+           [cdkDropListData]="tournee.livraisons"
+           (cdkDropListDropped)="drop($event)">
+        <div class="flex flex-row w-full justify-between w-72 bg-gray-100 rounded-t-lg px-4 pt-2 pb-2">
+          <div class="flex flex-col w-full">
+            <div class="w-full flex flex-row items-center justify-between">
+              <div class="font-medium">
+                Tournee: {{tournee.reference}} 
+              </div>
+              <div>
+                <span class="text-xs px-2 py-px rounded-xl text-white" [style.background-color] = "defineEtat(tournee.etat).color">
+                  {{defineEtat(tournee.etat).label}}
+                </span>
+              </div>
+            </div>
+            <div class="text-xs">
+              <label class="font-medium">Distance: </label>
+              {{ toKilometer(tournee.distance) }} Km
+            </div>
+            <div class="text-xs">
+              <label class="font-medium">Livreurs: </label>
+              <mat-chip-set>
+                @for (livreur of tournee.employes; track livreur) {
+                  <mat-chip-row>
+                    <label class="text-[0.65rem]">
+                      {{livreur.prenom}} {{livreur.nom}}
+                    </label>
+                  </mat-chip-row>
+                }
+              </mat-chip-set>
+            </div>
+            <div class="text-xs">
+              <label class="font-medium">Camion: </label>
+              <mat-chip-row>
+                <label class="text-[0.65rem]">
+                  {{tournee.camion.immatriculation}}
+                </label>
+              </mat-chip-row>
+            </div>
           </div>
         </div>
 
         @for (livraison of tournee.livraisons; track livraison.reference) {
-          <div class="flex flex-col item w-72 rounded-md py-2 px-4 my-2 shadow-md shadow-gray-300 hover:bg-slate-50">
-            <div>
-              <label class="font-medium">Livraison: {{livraison.reference}}</label>
+          @if (livraison.etat == "PLANIFIEE") {
+            <div class="flex flex-col w-full item w-[18rem] rounded-md py-2 px-4 my-2 shadow-md shadow-gray-300 hover:bg-slate-50 cursor-move"
+                 cdkDrag
+                 [cdkDragData]="livraison">
+              <app-livraison [livraison]="livraison"></app-livraison>
             </div>
-            <div class="text-xs font-medium">
-              <label>&nbsp;&nbsp;Lieu: {{livraison.commandes![0].client.adresse}}</label>
+          } @else {
+            <div class="flex flex-col w-full item w-[18rem] rounded-md py-2 px-4 my-2 shadow-md shadow-gray-300 hover:bg-slate-50 cursor-move">
+              <app-livraison [livraison]="livraison"></app-livraison>
             </div>
-            <div class="text-xs">
-              <label>
-                &nbsp;&nbsp;{{livraison.commandes![0].client.codePostal}}, {{ livraison.commandes![0].client.ville }}
-              </label>
-            </div>
-            <div class="flex flex-row mt-2">
-              @for (commande of livraison.commandes; track $index) {
-                <div class="px-1 py-1 mx-2 rounded-xl bg-orange-100 text-sm">
-                  {{ commande.reference }}
-                </div>
-              }
-            </div>
-          </div>
+          }
         }
 
       </div>

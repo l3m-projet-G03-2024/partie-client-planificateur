@@ -17,12 +17,13 @@ export function getMarker({ lat, lng }: LatLng): Marker<unknown> {
     });
 }
 
-export function getCustomMarker({ lat, lng }: LatLng, color: string): Marker<unknown> {
+export function getCustomMarker({ lat, lng }: LatLng, color: string, reference: string): Marker<unknown> {
     return marker([lat, lng], {
         icon: icon({
             ...Icon.Default.prototype.options,
             iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
         }),
+        title: reference
     });
 }
