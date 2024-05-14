@@ -21,6 +21,9 @@ import { TourneeService } from '../../../services/tournee.service';
 import { LivraisonService } from '../../../services/livraison.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
 import { DayPlanInProgress } from '../../../utils/enums/day-plan-in-progress.enum';
+import { CamionService } from '../../../services/camion.service';
+import { EmployeService } from '../../../services/employe.service';
+import { Emploi } from '../../../utils/enums/emploi.enum';
 
 @Component({
   selector: 'app-details-journee',
@@ -37,7 +40,9 @@ import { DayPlanInProgress } from '../../../utils/enums/day-plan-in-progress.enu
     GeoapiService,
     CommandeService,
     TourneeService,
-    LivraisonService
+    LivraisonService,
+    EmployeService,
+    CamionService
   ],
   templateUrl: './details-journee.component.html',
   styleUrl: './details-journee.component.scss'
@@ -57,6 +62,8 @@ export class DetailsJourneeComponent implements OnInit {
     value: false,
     label: ''
   });
+
+  readonly sigCanEndDay = signal<boolean>(false);
   
 
   constructor(
@@ -68,6 +75,8 @@ export class DetailsJourneeComponent implements OnInit {
     private readonly commandeService: CommandeService,
     private readonly tourneeService: TourneeService,
     private readonly livraisonService: LivraisonService,
+    private readonly employeService: EmployeService,
+    private readonly camionService: CamionService
   ) {}
 
   ngOnInit(): void {
@@ -90,13 +99,22 @@ export class DetailsJourneeComponent implements OnInit {
 
   async openPlanDayDialog(reference: string): Promise<void> {
     const openedCommandes = await this.commandeService.listCommandes(EtatDeCommande.OUVERTE);
+    const livreurs = (await this.employeService.listEmployes(Emploi.LIVREUR, this.sigJournee().entrepot?.nom!))
+    .filter(livreur => {
+      return livreur.entrepot.nom == this.sigJournee().entrepot?.nom! &&
+             livreur.emploi == Emploi.LIVREUR
+    });
+    
+    const camions = await this.camionService.listCamions(this.sigJournee().entrepot?.nom!);
 
     const dialogRef = this.dialog.open(PlanDayDialog, {
       enterAnimationDuration: '200ms',
       exitAnimationDuration: '200ms',
       data: {
         reference,
-        commandes: [...openedCommandes]
+        commandes: [...openedCommandes],
+        livreurs: [...livreurs],
+        camions: [...camions]
       },
     });
 
@@ -132,43 +150,48 @@ export class DetailsJourneeComponent implements OnInit {
 
   async planDay(data: PlanDayFormsData): Promise<Object> {
     const clients = this.journeeService.groupCommandsByClientGeoLocation(data.selectedCommandes);
-    console.log(clients);
     
-    
+    this.updatePlanInProgress(true, DayPlanInProgress.DISTANCE_GET);
     const entrepotCoords = [
       this.sigJournee().entrepot!.longitude,
       this.sigJournee().entrepot!.latitude
     ];
     const distanceMatrix = (await this.geoapiService.getDistancesMatrix(clients, entrepotCoords)).distances;
-    console.log("distance Matrix",distanceMatrix);
-
-    this.planInProgress.set({
-      value: true,
-      label: DayPlanInProgress.DAY_UPDATE
-    });
-
+    
+    this.updatePlanInProgress(true, DayPlanInProgress.TURNS_REPARTITION);
     const optimizedDayData = await this.journeeService.planDay({
       ...data,
       clientDeliveries: clients,
       dayReference: this.sigJournee().reference
     }, distanceMatrix);
 
-    this.planInProgress.set({
-      value: true,
-      label: DayPlanInProgress.TURNS_CREATION
-    });
+    this.updatePlanInProgress(true, DayPlanInProgress.TURNS_CREATION);
     await this.tourneeService.createTournees(this.sigJournee().reference, optimizedDayData);
 
-    this.planInProgress.set({
-      value: true,
-      label: DayPlanInProgress.DELIVERIES_CREATION
-    });
+    this.updatePlanInProgress(true, DayPlanInProgress.TEAM_REPARTITION);
+    await this.tourneeService.addTeamsToTournees(optimizedDayData, data.deliveryTeams);
+
+    this.updatePlanInProgress(true, DayPlanInProgress.DELIVERIES_CREATION);
     await this.livraisonService.createLivraisons(optimizedDayData);
     return await this.commandeService.updateCommandes(optimizedDayData);
   }
 
   toKilometer(distanceInMeter: number | undefined): string | undefined {
     return distanceInMeter ? (distanceInMeter / 1000).toFixed(2) : undefined
+  }
+
+  updatePlanInProgress(value: boolean, label: DayPlanInProgress) {
+    this.planInProgress.set({value,label});
+  }
+
+  canEndDay(value: boolean) {
+    this.sigCanEndDay.set(value);
+  }
+
+  endDay(): void {
+    this.journeeService.updateDay(this.sigJournee().reference, {etat: EtatDeJournee.EFFECTUEE}).then(_ => 
+      this.loadDayDetails(this.sigJournee().reference)
+    );
   }
 
 }

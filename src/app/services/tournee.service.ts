@@ -5,6 +5,7 @@ import { firstValueFrom, map } from 'rxjs';
 import { FormatTurn } from '../utils/types/format-turn.type';
 import { Tournee } from '../utils/types/tournee.type';
 import { EtatDeTournee } from '../utils/enums/etat-de-tournee.enum';
+import { DeliveryTeam } from '../utils/types/delivery-team.type';
 
 @Injectable({
   providedIn: 'root'
@@ -44,5 +45,31 @@ export class TourneeService {
         headers: { Accept: 'application/json' },
       }
     ));
+  }
+
+  async addTeamsToTournees(turns: FormatTurn[], deliveryTeams: DeliveryTeam[]) {
+    deliveryTeams.forEach(async (team, index) => {
+      team.livreurs.forEach(async (livreur) => {
+        return await firstValueFrom(this.httpClient.patch(
+          `${this.MAIN_SERVER_BASE_PATH}/tournees/${turns[index].reference}/add-employe`, 
+          {
+            idEmploye: livreur.trigramme
+          },
+          {
+            headers: { Accept: 'application/json' },
+          }
+        ));
+      });
+      
+      await firstValueFrom(this.httpClient.patch(
+        `${this.MAIN_SERVER_BASE_PATH}/tournees/${turns[index].reference}/add-camion`, 
+        {
+          immatriculation: team.camion?.immatriculation
+        },
+        {
+          headers: { Accept: 'application/json' },
+        }
+      ));
+    })
   }
 }

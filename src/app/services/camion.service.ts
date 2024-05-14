@@ -1,24 +1,27 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { firstValueFrom, map } from 'rxjs';
-import { Entrepot } from '../utils/types/entrepot-type';
+import { firstValueFrom} from 'rxjs';
+import { Camion } from '../utils/types/camion.type';
 
 @Injectable({
   providedIn: 'root'
 })
-export class EntrepotService {
+export class CamionService {
 
   private readonly MAIN_SERVER_BASE_PATH = `${environment.mainServer}/api/v1`;
 
   constructor(private httpClient: HttpClient) { }
 
 
-  listEntrepots(): Promise<Entrepot[]> {
-    return firstValueFrom(this.httpClient.get<Entrepot[]>(
-        `${this.MAIN_SERVER_BASE_PATH}/entrepots/`,
+  listCamions(nomEntrepot: string): Promise<Camion[]> {
+    return firstValueFrom(this.httpClient.get<Camion[]>(
+        `${this.MAIN_SERVER_BASE_PATH}/camions/`,
         {
           headers: { Accept: 'application/json' },
+          params: {
+            nomEntrepot
+          }
         }
       )
     ); 

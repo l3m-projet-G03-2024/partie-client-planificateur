@@ -26,15 +26,13 @@
                             </span>
                         </div>
                     </div>
-                    <div class="mb-2 flex flex-row">
-                        <div class="mx-2">
-                            <span class="text-base font-semibold mr-2">Montant Total:</span>
-                            <span class="text-sm font-medium">{{sigJournee().montant || 0}} &euro;</span>
-                        </div>
-                        <div class="mx-2">
-                            <span class="text-base font-semibold mr-2">Temps de montage théorique:</span>
-                            <span class="text-sm font-medium">{{sigJournee().tempsDeMontage || 0 }} minutes</span>
-                        </div>
+                    <div>
+                        @if ( sigJournee().etat != 'EFFECTUEE' && sigCanEndDay()) {
+                            <button class="block rounded-xl bg-gray-800 font-sans text-sm font-semibold leading-relaxed text-white px-3 py-2"
+                                    (click)="endDay()">
+                                Terminer la journée
+                            </button>
+                        }
                     </div>
                 </div>
             </div>
@@ -75,12 +73,12 @@
                     }
                 </div>
             } @else if(detailsView() == 'list-view') {
-                <!-- TODO list component -->
+                <!-- list component -->
                 <div class="w-full overflow-x-auto">
-                    <app-lists [referenceJournee]="sigJournee().reference"></app-lists>
+                    <app-lists [referenceJournee]="sigJournee().reference" (canEndDay)="canEndDay($event)"></app-lists>
                 </div>
             } @else {
-                <!-- TODO map component -->
+                <!-- map component -->
                 <div class="w-full min-h-96">
                     <app-carto [referenceJournee]="sigJournee().reference" [entrepot]="sigJournee().entrepot!"></app-carto>
                 </div>
