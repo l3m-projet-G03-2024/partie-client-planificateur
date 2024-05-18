@@ -45,9 +45,6 @@ export class JourneeService {
           reference,
           date: `${date.getFullYear()}-${("00" + (date.getMonth()+1)).slice(-2)}-${("00" + date.getDate()).slice(-2)}`,
           nomEntrepot: selectedEntrepot.nom
-        },
-        {
-          headers: { Accept: 'application/json' }
         }
       )
     );
@@ -62,20 +59,14 @@ export class JourneeService {
 
   deleteDay(reference: string): Promise<Object> {
     return firstValueFrom(this.httpClient.delete(
-      `${this.MAIN_SERVER_BASE_PATH}/journees/${reference}`,
-      {
-        headers: { Accept: 'application/json' }
-      }
+      `${this.MAIN_SERVER_BASE_PATH}/journees/${reference}`
     ));
   }
 
   
   getDayDetails(reference: string): Promise<Journee> {
     return firstValueFrom(this.httpClient.get<Journee>(
-      `${this.MAIN_SERVER_BASE_PATH}/journees/${reference}`,
-      {
-        headers: { Accept: 'application/json' }
-      }
+      `${this.MAIN_SERVER_BASE_PATH}/journees/${reference}`
     ));
   }
 
@@ -98,9 +89,6 @@ export class JourneeService {
       `${this.MAIN_SERVER_BASE_PATH}/journees/${dayReference}`,
       {
         ...body
-      },
-      {
-        headers: { Accept: 'application/json' },
       }
     ));
   }
@@ -109,7 +97,7 @@ export class JourneeService {
     return firstValueFrom(this.httpClient.get<Entrepot[]>(
       `${this.MAIN_SERVER_BASE_PATH}/entrepots`,
       {
-        headers: { Accept: 'application/json' },
+        
       }
     ));
   }
@@ -159,9 +147,6 @@ export class JourneeService {
     const response = await firstValueFrom(this.httpClient.post<OptimizeDayResponse>(
       `${this.PLANNER_WS_BASE_PATH}/planner/planif`,
       {...data},
-      {
-        headers: { Accept: 'application/json' }
-      }
     ));
 
     return {

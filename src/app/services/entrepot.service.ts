@@ -17,9 +17,6 @@ export class EntrepotService {
   listEntrepots(): Promise<Entrepot[]> {
     return firstValueFrom(this.httpClient.get<Entrepot[]>(
         `${this.MAIN_SERVER_BASE_PATH}/entrepots/`,
-        {
-          headers: { Accept: 'application/json' },
-        }
       )
     ); 
   }

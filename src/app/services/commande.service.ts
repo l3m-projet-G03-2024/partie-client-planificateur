@@ -12,6 +12,7 @@ import { FormatTurn } from '../utils/types/format-turn.type';
 export class CommandeService {
 
   private readonly MAIN_SERVER_BASE_PATH = `${environment.mainServer}/api/v1`;
+  private readonly accessToken = localStorage.getItem("accessToken");
 
   constructor(private httpClient: HttpClient) { }
 
@@ -20,7 +21,6 @@ export class CommandeService {
     return firstValueFrom(this.httpClient.get<Commande[]>(
         `${this.MAIN_SERVER_BASE_PATH}/commandes/`,
         {
-          headers: { Accept: 'application/json' },
           params: {
             etat: etat,
           }
@@ -33,9 +33,6 @@ export class CommandeService {
   getCommandeDetails(reference: string): Promise<Commande> {
     return firstValueFrom(this.httpClient.get<Commande>(
       `${this.MAIN_SERVER_BASE_PATH}/commandes/${reference}`,
-      {
-        headers: { Accept: 'application/json' }
-      }
     ));
   }
 
@@ -54,9 +51,6 @@ export class CommandeService {
       `${this.MAIN_SERVER_BASE_PATH}/commandes/`,
       {
         commandes
-      },
-      {
-        headers: { Accept: 'application/json' },
       }
     ));
   }

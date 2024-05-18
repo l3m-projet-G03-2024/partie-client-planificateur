@@ -13,6 +13,7 @@ import { DeliveryTeam } from '../utils/types/delivery-team.type';
 export class TourneeService {
 
   private readonly MAIN_SERVER_BASE_PATH = `${environment.mainServer}/api/v1`;
+  private readonly accessToken = localStorage.getItem("accessToken");
 
   constructor(private httpClient: HttpClient) { }
 
@@ -21,7 +22,6 @@ export class TourneeService {
     return firstValueFrom(this.httpClient.get<Tournee[]>(
         `${this.MAIN_SERVER_BASE_PATH}/tournees/`,
         {
-          headers: { Accept: 'application/json' },
           params
         }
       )
@@ -42,7 +42,7 @@ export class TourneeService {
         tournees,
       },
       {
-        headers: { Accept: 'application/json' },
+        
       }
     ));
   }
@@ -56,7 +56,7 @@ export class TourneeService {
             idEmploye: livreur.trigramme
           },
           {
-            headers: { Accept: 'application/json' },
+            
           }
         ));
       });
@@ -67,7 +67,7 @@ export class TourneeService {
           immatriculation: team.camion?.immatriculation
         },
         {
-          headers: { Accept: 'application/json' },
+          
         }
       ));
     })

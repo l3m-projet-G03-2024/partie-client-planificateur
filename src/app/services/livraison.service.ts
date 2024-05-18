@@ -29,9 +29,6 @@ export class LivraisonService {
       `${this.MAIN_SERVER_BASE_PATH}/livraisons/`,
       {
         livraisons: deliveries
-      },
-      {
-        headers: { Accept: 'application/json' },
       }
     ));
   }

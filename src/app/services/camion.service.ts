@@ -18,7 +18,6 @@ export class CamionService {
     return firstValueFrom(this.httpClient.get<Camion[]>(
         `${this.MAIN_SERVER_BASE_PATH}/camions/`,
         {
-          headers: { Accept: 'application/json' },
           params: {
             nomEntrepot
           }

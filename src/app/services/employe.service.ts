@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { firstValueFrom} from 'rxjs';
@@ -11,7 +11,6 @@ import { Emploi } from '../utils/enums/emploi.enum';
 export class EmployeService {
 
   private readonly MAIN_SERVER_BASE_PATH = `${environment.mainServer}/api/v1`;
-
   constructor(private httpClient: HttpClient) { }
 
 
@@ -19,7 +18,6 @@ export class EmployeService {
     return firstValueFrom(this.httpClient.get<Employe[]>(
         `${this.MAIN_SERVER_BASE_PATH}/employes/`,
         {
-          headers: { Accept: 'application/json' },
           params: {
             emploi,
             nomEntrepot
@@ -31,7 +29,7 @@ export class EmployeService {
 
   getEmploye(emailEmploye: string): Promise<Employe> {
     return firstValueFrom(this.httpClient.get<Employe>(
-        `${this.MAIN_SERVER_BASE_PATH}/employes/${emailEmploye}/`,
+        `${this.MAIN_SERVER_BASE_PATH}/employes/${emailEmploye}/`
       )
     ); 
   }
